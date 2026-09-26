@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Lander (stub)</title>
+</head>
+<body>
+  <h1>Lander stub — §10</h1>
+  <p>Replace with the real destination. Reads <code>sessionId</code> and falls back to query-string
+     <code>ttclid</code>/<code>utm_*</code> if present, per docs/build-spec.md §10.</p>
+  <pre id="out"></pre>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const sessionId = params.get('sessionId');
+    const fallbackAttribution = {
+      ttclid: params.get('ttclid'),
+      utm_source: params.get('utm_source'),
+      utm_medium: params.get('utm_medium'),
+      utm_campaign: params.get('utm_campaign'),
+      utm_id: params.get('utm_id'),
+    };
+    document.getElementById('out').textContent = JSON.stringify({ sessionId, fallbackAttribution }, null, 2);
+
+    // TODO: if sessionId is present, look up { attribution } server-side
+    // (whatever logged it in bait-page's /session function, per §12) rather
+    // than trusting query params alone.
+  </script>
+</body>
+</html>

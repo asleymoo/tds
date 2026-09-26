@@ -1,0 +1,11 @@
+{
+  // main points at raw src/ for now — see lane-1-attribution/wrangler.jsonc
+  // for why. Switch to "dist/worker.js" once ready to obfuscate.
+  "name": "tds-lane-3-classify",
+  "main": "src/index.js",
+  "compatibility_date": "2024-09-01",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://REPLACE-bait-page.pages.dev",
+    "NATIVE_BRIDGE_HANDLER": "SPKViewController"
+  }
+}

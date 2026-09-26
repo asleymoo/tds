@@ -1,0 +1,19 @@
+{
+  "name": "tds",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "bait-page",
+    "lander",
+    "lane-1-attribution",
+    "lane-2-antitamper",
+    "lane-3-classify",
+    "lane-4-container",
+    "lane-5-reveal"
+  ],
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "javascript-obfuscator": "^4.1.0",
+    "wrangler": "^3.90.0"
+  }
+}

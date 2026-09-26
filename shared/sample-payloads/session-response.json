@@ -1,0 +1,7 @@
+{
+  "region": "na",
+  "runtime": "edge",
+  "build": "1.0.0",
+  "cacheKey": "abc123",
+  "_sessionRef": "opaque-value-you-log-against"
+}

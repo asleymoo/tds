@@ -1,0 +1,10 @@
+{
+  "name": "tds-lane-1-attribution",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "node build.mjs",
+    "deploy": "wrangler deploy"
+  }
+}

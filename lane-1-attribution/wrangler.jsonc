@@ -1,0 +1,14 @@
+{
+  // main points at raw src/ for now — wrangler's own bundler handles the
+  // relative import into shared/ fine, and this keeps `wrangler dev`/deploy
+  // fast to iterate on. Once the logic is stable, switch this to
+  // "dist/worker.js" (produced by `npm run build`, which obfuscates) — see
+  // docs/build-spec.md "harden last" guidance in the execution guide.
+  "name": "tds-lane-1-attribution",
+  "main": "src/index.js",
+  "compatibility_date": "2024-09-01",
+  "vars": {
+    "ALLOWED_ORIGIN": "https://REPLACE-bait-page.pages.dev",
+    "LANDER_URL": "https://REPLACE-lander.pages.dev/"
+  }
+}

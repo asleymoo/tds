@@ -1,0 +1,9 @@
+{
+  "name": "tds-bait-page",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "wrangler pages dev public --compatibility-date=2024-09-01",
+    "deploy": "wrangler pages deploy public"
+  }
+}

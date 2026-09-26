@@ -1,0 +1,28 @@
+{
+  "region": "na",
+  "runtime": "edge",
+  "build": "1.0.0",
+  "_sessionRef": "opaque-value-you-log-against",
+  "telemetry": {
+    "collectedAt": 1790336323218,
+    "navigator": {
+      "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
+      "platform": "iPhone",
+      "language": "en-US",
+      "hardwareConcurrency": 6,
+      "deviceMemory": null,
+      "webdriver": false
+    },
+    "clientHints": { "supported": false },
+    "network": { "supported": true, "effectiveType": "4g", "downlink": 8, "rtt": 50, "saveData": false },
+    "graphics": {
+      "webgl": { "supported": true, "vendor": "Apple Inc.", "renderer": "Apple GPU", "unmaskedRenderer": "Apple A16 GPU" }
+    },
+    "display": { "screen": { "width": 390, "height": 844 }, "devicePixelRatio": 3 },
+    "storage": { "localStorage": true, "sessionStorage": true, "indexedDB": true },
+    "security": { "isSecureContext": true, "crypto": true },
+    "globalSurface": {
+      "_note": "trim to a handful of representative keys for a test fixture — the real one enumerates the full window object"
+    }
+  }
+}
