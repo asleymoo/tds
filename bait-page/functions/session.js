@@ -24,8 +24,18 @@ export async function onRequestPost(context) {
     _sessionRef: sessionRef,
   };
 
-  // TODO: write { sessionRef, ip: context.request.headers.get('cf-connecting-ip'),
-  // cf: context.request.cf } somewhere per §12 before going live.
+  // §12 — log session start. ANALYTICS is a Workers Analytics Engine binding;
+  // gracefully absent locally (Miniflare won't have it). Add the binding in
+  // the Cloudflare Pages dashboard or wrangler.toml before going live.
+  context.env.ANALYTICS?.writeDataPoint({
+    indexes: [sessionRef],
+    blobs: [
+      context.request.headers.get('cf-connecting-ip') || '',
+      context.request.cf?.country || '',
+      context.request.cf?.asn?.toString() || '',
+    ],
+    doubles: [Date.now()],
+  });
 
   return new Response(JSON.stringify(body), {
     status: 200,

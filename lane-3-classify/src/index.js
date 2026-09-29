@@ -51,11 +51,12 @@ export default {
     if (request.method === 'OPTIONS') return handleOptions(request, allowedOrigin);
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
-    // NOTE: the request body (attribution + §3 telemetry) is available here
-    // as `await request.json()` if you want server-side logging/scoring
-    // signals (request.cf.country/asn are free) before returning the script.
-    // Nothing in the delivered script below depends on it yet — see
-    // docs/build-spec.md §6 for what detectedAdConnection is actually for.
+    const body = await request.json().catch(() => ({}));
+    env.ANALYTICS?.writeDataPoint({
+      indexes: [body._sessionRef || ''],
+      blobs: ['lane-3-arrived', request.cf?.country || '', request.cf?.asn?.toString() || ''],
+      doubles: [Date.now()],
+    });
 
     const code = buildDeliveredScript(env);
     return new Response(code, {

@@ -10,5 +10,8 @@
   "vars": {
     "ALLOWED_ORIGIN": "http://localhost:8788",
     "LANDER_URL": "https://REPLACE-lander.pages.dev/"
-  }
+  },
+  "analytics_engine_datasets": [
+    { "binding": "ANALYTICS", "dataset": "tds_events" }
+  ]
 }

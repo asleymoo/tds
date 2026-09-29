@@ -36,6 +36,13 @@ export default {
     if (request.method === 'OPTIONS') return handleOptions(request, allowedOrigin);
     if (request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
 
+    const body = await request.json().catch(() => ({}));
+    env.ANALYTICS?.writeDataPoint({
+      indexes: [body._sessionRef || ''],
+      blobs: ['lane-4-arrived'],
+      doubles: [Date.now()],
+    });
+
     const code = buildDeliveredScript();
     return new Response(code, {
       status: 200,
