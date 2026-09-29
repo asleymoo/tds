@@ -8,7 +8,7 @@
   "main": "src/index.js",
   "compatibility_date": "2024-09-01",
   "vars": {
-    "ALLOWED_ORIGIN": "https://REPLACE-bait-page.pages.dev",
+    "ALLOWED_ORIGIN": "http://localhost:8788",
     "LANDER_URL": "https://REPLACE-lander.pages.dev/"
   }
 }
