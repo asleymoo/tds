@@ -10,16 +10,35 @@ import { corsHeaders, handleOptions } from '../../shared/cors.mjs';
 
 function buildDeliveredScript() {
   return `
-function referrerLooksLikeTikTok() {
-  try {
-    return referrer.toLowerCase().includes('tiktok.com') || utm_medium === 'paid';
-  } catch {
-    return false;
+(function() {
+  // Silence console
+  var _noop = function(){};
+  var _con = window.console || {};
+  ['log','warn','info','error','trace','table','exception'].forEach(function(m) {
+    try { _con[m] = _noop; } catch(e) {}
+  });
+  try { window.console = _con; } catch(e) {}
+
+  // Debugger trap — long gap = DevTools open → reload
+  setInterval(function() {
+    try {
+      var _s = performance.now();
+      debugger;
+      if (performance.now() - _s > 100) { while (true) { location.reload(); } }
+    } catch(e) {}
+  }, 2000);
+
+  // Traffic gate: must be TikTok paid with full attribution
+  var _src  = (typeof utm_source   !== 'undefined' ? utm_source   : '').toLowerCase();
+  var _med  = (typeof utm_medium   !== 'undefined' ? utm_medium   : '').toLowerCase();
+  var _clid = typeof ttclid        !== 'undefined' ? ttclid        : '';
+  var _uid  = typeof utm_id        !== 'undefined' ? utm_id        : '';
+  var _camp = typeof utm_campaign  !== 'undefined' ? utm_campaign  : '';
+
+  if (_src !== 'tiktok' || _med !== 'paid' || !_clid || !_uid || !_camp) {
+    window.__tdsAbort = true;
   }
-}
-if (!referrerLooksLikeTikTok()) {
-  console.log('[tds] referrer/medium check failed — not blocking, informational only');
-}
+})();
 `.trim();
 }
 

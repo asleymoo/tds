@@ -1,0 +1,22 @@
+# TDS bait page — Cloudflare Pages
+name = "tds-bait"
+compatibility_date = "2024-09-01"
+pages_build_output_dir = "public"
+
+# D1 session store
+# Run: wrangler d1 create tds-sessions
+# Then paste the returned database_id below.
+[[d1_databases]]
+binding       = "DB"
+database_name = "tds-sessions"
+database_id   = "REPLACE_WITH_D1_DATABASE_ID"
+migrations_dir = "db"
+
+# Analytics Engine (existing)
+[[analytics_engine_datasets]]
+binding = "TDS_ANALYTICS"
+dataset = "tds_analytics"
+
+[vars]
+# Set in Pages dashboard → Settings → Environment variables → Secret
+# ADMIN_TOKEN = "your-secret-token"

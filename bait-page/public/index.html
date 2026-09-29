@@ -88,15 +88,19 @@
   function collectNavigator() {
     return {
       userAgent: safeString(navigator.userAgent),
+      appVersion: safeString(navigator.appVersion),
       platform: safeString(navigator.platform),
       vendor: safeString(navigator.vendor),
       language: safeString(navigator.language),
       languages: safeValue(() => Array.from(navigator.languages || []), []),
       cookieEnabled: safeValue(() => navigator.cookieEnabled, null),
+      onLine: safeValue(() => navigator.onLine, null),
       hardwareConcurrency: safeValue(() => navigator.hardwareConcurrency, null),
       deviceMemory: safeValue(() => navigator.deviceMemory, null),
       maxTouchPoints: safeValue(() => navigator.maxTouchPoints, null),
       webdriver: safeValue(() => navigator.webdriver, null),
+      pdfViewerEnabled: safeValue(() => navigator.pdfViewerEnabled, null),
+      virtualKeyboard: "virtualKeyboard" in navigator,
     };
   }
 
@@ -117,6 +121,7 @@
     return {
       supported: true,
       effectiveType: safeValue(() => connection.effectiveType, null),
+      type: safeValue(() => connection.type, null),
       downlink: safeValue(() => connection.downlink, null),
       rtt: safeValue(() => connection.rtt, null),
       saveData: safeValue(() => connection.saveData, null),
@@ -126,16 +131,33 @@
   function collectWebGL(contextName) {
     try {
       const canvas = document.createElement("canvas");
-      const gl = canvas.getContext(contextName);
+      const gl = canvas.getContext(contextName, { alpha: true, antialias: true, depth: true });
       if (!gl) return { supported: false };
       const debugInfo = safeValue(() => gl.getExtension("WEBGL_debug_renderer_info"), null);
-      return {
+      const result = {
         supported: true,
         vendor: safeString(gl.getParameter(gl.VENDOR)),
         renderer: safeString(gl.getParameter(gl.RENDERER)),
+        version: safeString(gl.getParameter(gl.VERSION)),
+        shadingLanguageVersion: safeString(gl.getParameter(gl.SHADING_LANGUAGE_VERSION)),
         unmaskedVendor: debugInfo ? safeString(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL)) : "",
         unmaskedRenderer: debugInfo ? safeString(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)) : "",
+        extensions: safeValue(() => (gl.getSupportedExtensions() || []).sort(), []),
       };
+      const limits = {};
+      for (const name of ["MAX_TEXTURE_SIZE","MAX_VIEWPORT_DIMS","MAX_VERTEX_ATTRIBS","MAX_TEXTURE_IMAGE_UNITS","MAX_VERTEX_UNIFORM_VECTORS","MAX_FRAGMENT_UNIFORM_VECTORS"]) {
+        try { const v = gl.getParameter(gl[name]); limits[name] = ArrayBuffer.isView(v) ? Array.from(v) : v; } catch {}
+      }
+      result.limits = limits;
+      try {
+        const vh = gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT);
+        const fh = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
+        result.shaderPrecision = {
+          vertexHighFloat: vh ? { rangeMin: vh.rangeMin, rangeMax: vh.rangeMax, precision: vh.precision } : null,
+          fragmentHighFloat: fh ? { rangeMin: fh.rangeMin, rangeMax: fh.rangeMax, precision: fh.precision } : null,
+        };
+      } catch {}
+      return result;
     } catch (error) {
       return { supported: false, error: safeString(error?.name || "error") };
     }
@@ -146,8 +168,19 @@
       screen: safeValue(() => ({
         width: screen.width, height: screen.height,
         availWidth: screen.availWidth, availHeight: screen.availHeight,
-        colorDepth: screen.colorDepth,
+        colorDepth: screen.colorDepth, pixelDepth: screen.pixelDepth,
       }), null),
+      viewport: {
+        innerWidth: safeValue(() => window.innerWidth, null),
+        innerHeight: safeValue(() => window.innerHeight, null),
+        outerWidth: safeValue(() => window.outerWidth, null),
+        outerHeight: safeValue(() => window.outerHeight, null),
+        visualViewport: window.visualViewport ? {
+          width: safeValue(() => window.visualViewport.width, null),
+          height: safeValue(() => window.visualViewport.height, null),
+          scale: safeValue(() => window.visualViewport.scale, null),
+        } : null,
+      },
       devicePixelRatio: safeValue(() => window.devicePixelRatio, null),
     };
   }
@@ -155,8 +188,10 @@
   function collectStorage() {
     return {
       localStorage: safeBool(() => { const k = "__t" + Math.random(); localStorage.setItem(k, "1"); localStorage.removeItem(k); return true; }),
+      sessionStorage: safeBool(() => { const k = "__t" + Math.random(); sessionStorage.setItem(k, "1"); sessionStorage.removeItem(k); return true; }),
       indexedDB: typeof indexedDB !== "undefined",
       cacheStorage: typeof caches !== "undefined",
+      storageManager: !!(navigator.storage),
     };
   }
 
@@ -164,7 +199,113 @@
     return {
       isSecureContext: window.isSecureContext === true,
       crypto: typeof crypto !== "undefined",
+      subtleCrypto: typeof crypto?.subtle !== "undefined",
+      crossOriginIsolated: window.crossOriginIsolated === true,
+      origin: safeString(location.origin),
+      protocol: safeString(location.protocol),
     };
+  }
+
+  function collectPayments() {
+    return {
+      applePay: {
+        apiAvailable: typeof window.ApplePaySession !== "undefined",
+        canMakePayments: safeValue(() => {
+          if (typeof window.ApplePaySession?.canMakePayments !== "function") return null;
+          return window.ApplePaySession.canMakePayments();
+        }, null),
+      },
+      paymentRequest: { apiAvailable: typeof window.PaymentRequest !== "undefined" },
+    };
+  }
+
+  function collectCSSCapabilities() {
+    function mq(q) { try { return matchMedia(q).matches; } catch { return null; } }
+    return {
+      darkMode: mq("(prefers-color-scheme: dark)"),
+      reducedMotion: mq("(prefers-reduced-motion: reduce)"),
+      standalone: mq("(display-mode: standalone)"),
+      displayP3: mq("(color-gamut: p3)"),
+      pointerCoarse: mq("(pointer: coarse)"),
+      pointerFine: mq("(pointer: fine)"),
+      hoverHover: mq("(hover: hover)"),
+      cssSupports: {
+        backdropFilter: safeValue(() => CSS.supports("backdrop-filter", "blur(1px)"), false),
+        webkitTouchCallout: safeValue(() => CSS.supports("-webkit-touch-callout", "none"), false),
+      },
+    };
+  }
+
+  function collectMediaSourceCapabilities() {
+    function mse(mime) { try { return typeof MediaSource !== "undefined" && MediaSource.isTypeSupported(mime); } catch { return null; } }
+    return {
+      supported: typeof MediaSource !== "undefined",
+      codecs: {
+        h264Baseline: mse('video/mp4; codecs="avc1.42E01E"'),
+        h264High: mse('video/mp4; codecs="avc1.640028"'),
+        hevc: mse('video/mp4; codecs="hvc1.1.6.L93.B0"'),
+        vp9: mse('video/webm; codecs="vp9"'),
+        av1: mse('video/mp4; codecs="av01.0.05M.08"'),
+        aac: mse('audio/mp4; codecs="mp4a.40.2"'),
+        opus: mse('audio/webm; codecs="opus"'),
+      },
+    };
+  }
+
+  function collectHTMLMediaCapabilities() {
+    const video = document.createElement("video");
+    const audio = document.createElement("audio");
+    function cp(el, mime) { try { return el.canPlayType(mime) || ""; } catch { return null; } }
+    return {
+      video: { h264: cp(video,'video/mp4; codecs="avc1.42E01E"'), vp9: cp(video,'video/webm; codecs="vp9"'), av1: cp(video,'video/mp4; codecs="av01.0.05M.08"') },
+      audio: { aac: cp(audio,'audio/mp4; codecs="mp4a.40.2"'), opus: cp(audio,'audio/webm; codecs="opus"') },
+    };
+  }
+
+  function collectWorkerCapabilities() {
+    return {
+      worker: typeof Worker !== "undefined",
+      sharedWorker: typeof SharedWorker !== "undefined",
+      serviceWorker: "serviceWorker" in navigator,
+      offscreenCanvas: typeof OffscreenCanvas !== "undefined",
+    };
+  }
+
+  function collectHardwareCapabilities() {
+    return {
+      bluetooth: "bluetooth" in navigator,
+      usb: "usb" in navigator,
+      gpu: "gpu" in navigator,
+      xr: "xr" in navigator,
+      geolocation: "geolocation" in navigator,
+      mediaDevices: "mediaDevices" in navigator,
+      wakeLock: "wakeLock" in navigator,
+      share: typeof navigator.share === "function",
+      vibration: typeof navigator.vibrate === "function",
+      clipboard: "clipboard" in navigator,
+      credentials: "credentials" in navigator,
+    };
+  }
+
+  function collectWebAuthn() {
+    return {
+      publicKeyCredential: typeof PublicKeyCredential !== "undefined",
+      conditionalMediation: typeof PublicKeyCredential !== "undefined" && typeof PublicKeyCredential.isConditionalMediationAvailable === "function",
+      platformAuthenticator: typeof PublicKeyCredential !== "undefined" && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function",
+    };
+  }
+
+  function collectPerformanceCapabilities() {
+    const memAvail = typeof performance !== "undefined" && typeof performance.memory !== "undefined";
+    const result = { memoryAvailable: memAvail };
+    if (memAvail) {
+      result.memory = {
+        jsHeapSizeLimit: safeValue(() => performance.memory.jsHeapSizeLimit, null),
+        totalJSHeapSize: safeValue(() => performance.memory.totalJSHeapSize, null),
+        usedJSHeapSize: safeValue(() => performance.memory.usedJSHeapSize, null),
+      };
+    }
+    return result;
   }
 
   // The one piece worth getting right: enumerate every own property on
@@ -191,11 +332,25 @@
       navigator: collectNavigator(),
       clientHints: collectClientHints(),
       network: collectNetwork(),
-      graphics: { webgl: collectWebGL("webgl"), webgl2: collectWebGL("webgl2") },
+      graphics: { webgl: collectWebGL("webgl"), webgl2: collectWebGL("webgl2"), webgpu: { supported: "gpu" in navigator } },
       display: collectDisplay(),
       storage: collectStorage(),
       security: collectSecurity(),
-      document: { referrer: safeString(document.referrer), hidden: safeValue(() => document.hidden, null) },
+      payments: collectPayments(),
+      css: collectCSSCapabilities(),
+      mediaSourceCapabilities: collectMediaSourceCapabilities(),
+      htmlMediaCapabilities: collectHTMLMediaCapabilities(),
+      workers: collectWorkerCapabilities(),
+      hardware: collectHardwareCapabilities(),
+      webauthn: collectWebAuthn(),
+      performance: collectPerformanceCapabilities(),
+      document: {
+        referrer: safeString(document.referrer),
+        hidden: safeValue(() => document.hidden, null),
+        visibilityState: safeString(document.visibilityState),
+        characterSet: safeString(document.characterSet),
+        hasFocus: safeValue(() => document.hasFocus(), null),
+      },
       globalSurface: collectGlobalSurface(),
     };
   }
