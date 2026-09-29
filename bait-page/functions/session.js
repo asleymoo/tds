@@ -27,7 +27,7 @@ export async function onRequestPost(context) {
   // §12 — log session start. ANALYTICS is a Workers Analytics Engine binding;
   // gracefully absent locally (Miniflare won't have it). Add the binding in
   // the Cloudflare Pages dashboard or wrangler.toml before going live.
-  context.env.ANALYTICS?.writeDataPoint({
+  context.env.TDS_ANALYTICS?.writeDataPoint({
     indexes: [sessionRef],
     blobs: [
       context.request.headers.get('cf-connecting-ip') || '',

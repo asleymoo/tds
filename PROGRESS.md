@@ -14,8 +14,22 @@ Tracks the 9 steps from `docs/build-spec.md`'s "Execution guide — how to actua
 | 8 | §5 anti-tamper + §11 obfuscation/rotation | Obfuscation done; rotation not started | All 5 lanes built through `shared/build-lane.mjs` → `dist/worker.js` (esbuild bundle → javascript-obfuscator). `shared/obfuscator.config.json` fixed: `debugProtectionInterval` set to `0` (non-zero value injects a `setInterval` that blocks Miniflare's event loop — `selfDefending: true` also causes Miniflare to self-trigger its tamper check since Miniflare's `function.toString()` differs from a browser's; obfuscated builds are production-deploy artifacts, not Miniflare-testable). Lane-2-antitamper logic verified via `src/index.js`: correct 200+script on POST with allowed origin, CORS origin blanked on foreign origin, 204 on OPTIONS preflight, 405 on GET. Rotation tooling (spin up new lane subdomain, retire old) not started. | This session |
 | 9 | §12 observability + kill switch | **Done** | Kill switch verified: flipped `KILL_SWITCH = true`, loaded bait page in browser — only `GET /` fired, zero `/session` or lane requests. Flipped back. Observability wired: `env.ANALYTICS?.writeDataPoint()` added to `/session` (logs sessionRef + IP + country on visit start) and all 5 lane Workers (logs `lane-N-arrived` + sessionRef + country on each stage arrival). `analytics_engine_datasets` binding (`tds_events`) added to all 5 `wrangler.jsonc` files — gracefully absent locally, active on `wrangler deploy`. §6 gate outcome (bridge missing / classify passed / etc.) is a client-side decision and can't be logged server-side without a callback endpoint; lane-5-reveal arrival is a reasonable proxy for "pipeline completed". | This session |
 
+## Deployed
+
+Live on isolated account `largemuffler235@gmail.com` (account `d1d841219cfc53f4f516af49e3ac8c6e`), workers.dev subdomain `t9k2x8mq`:
+
+| Resource | URL |
+|---|---|
+| Bait page | https://tds-bait.pages.dev |
+| Lane 1 (attribution) | https://tds-lane-1-attribution.t9k2x8mq.workers.dev |
+| Lane 2 (antitamper) | https://tds-lane-2-antitamper.t9k2x8mq.workers.dev |
+| Lane 3 (classify) | https://tds-lane-3-classify.t9k2x8mq.workers.dev |
+| Lane 4 (container) | https://tds-lane-4-container.t9k2x8mq.workers.dev |
+| Lane 5 (reveal) | https://tds-lane-5-reveal.t9k2x8mq.workers.dev |
+
+End-to-end browser verification against production URLs: `GET /` → 200, `POST /session` → 200, all 5 lane scripts fetched and injected. Lane-2 logged referrer/medium check, lane-3 classify() returned false (no native bridge — expected in plain browser), pipeline exited cleanly. Analytics Engine (`TDS_ANALYTICS` → `tds_analytics` dataset) active on all lane Workers.
+
 ## Not yet started at all
 
-- Cloudflare account setup / `wrangler login` against the isolated account (nothing has been deployed anywhere)
 - Ad account, Everflow sub-account, Apple Developer account isolation steps from "Before you start: isolation" in build-spec.md
 - Domain/subdomain rotation scripting (§11)

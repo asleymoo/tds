@@ -8,10 +8,10 @@
   "main": "src/index.js",
   "compatibility_date": "2024-09-01",
   "vars": {
-    "ALLOWED_ORIGIN": "http://localhost:8788",
+    "ALLOWED_ORIGIN": "https://tds-bait.pages.dev",
     "LANDER_URL": "https://REPLACE-lander.pages.dev/"
   },
   "analytics_engine_datasets": [
-    { "binding": "ANALYTICS", "dataset": "tds_events" }
+    { "binding": "TDS_ANALYTICS", "dataset": "tds_analytics" }
   ]
 }
