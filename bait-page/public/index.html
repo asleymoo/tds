@@ -183,27 +183,63 @@
 
   // ==================== CONFIG ====================
 
-  // App Store URL — replace with your live link before going live.
-  var APP_STORE_URL = "https://apps.apple.com/app/idXXXXXXXXX";
+  // Destination URL — use your Millian/Everflow tracking link here,
+  // e.g. "https://www.stw4c9hx.com/7BZ2W/XXXXXXXX"
+  // The attribution params below are appended automatically.
+  var APP_STORE_URL = "https://www.stw4c9hx.com/7BZ2W/XXXXXXXX";
 
   // How long to wait (ms) after page load before the funnel appears.
   var LANDER_DELAY_MS = 60000;
 
   // ==================== ATTRIBUTION ====================
-  // Capture TikTok click / impression IDs from URL on load and pass them
-  // through to the App Store link so attribution postbacks can fire.
+  // Captures both click-through (ttclid) and view-through / VTA identifiers
+  // (tt_user_id, anonymous_id, impression_id, _ttp cookie, in-app bridge).
+  // All are appended to APP_STORE_URL so Everflow / TikTok can attribute.
 
   var _params = new URLSearchParams(location.search);
-  var _ttclid       = _params.get("ttclid")       || "";
+
+  // Click-through attribution
+  var _ttclid = _params.get("ttclid") || "";
+
+  // View-through / VTA identifiers (TikTok passes these for non-click traffic)
+  var _ttUserId     = _params.get("tt_user_id")    || _params.get("ttuser_id") || "";
+  var _anonymousId  = _params.get("anonymous_id")  || _params.get("anon_id")   || "";
   var _impressionId = _params.get("impression_id") || "";
   var _utmCampaign  = _params.get("utm_campaign")  || "";
   var _utmContent   = _params.get("utm_content")   || "";
 
+  // _ttp cookie — set by TikTok Pixel (ttq), the primary VTA dedup key
+  function _getCookie(name) {
+    try {
+      var re = new RegExp("(?:^|;)\\s*" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "=([^;]*)");
+      var m = document.cookie.match(re);
+      return m ? decodeURIComponent(m[1]) : "";
+    } catch { return ""; }
+  }
+  var _ttpCookie = _getCookie("_ttp") || _getCookie("ttp") || "";
+
+  // TikTok in-app JS bridge probe — exposes user / open ID in some ad formats
+  var _ttBridgeId = "";
+  try {
+    var _br = window.__TikTokImp || window.TikTokImp || window.__tiktok_webview || null;
+    if (_br && typeof _br.getUserIdentity === "function") {
+      var _bid = _br.getUserIdentity() || {};
+      _ttBridgeId = _bid.user_id || _bid.anonymous_id || _bid.open_id || "";
+    }
+  } catch {}
+
   function buildStoreUrl() {
     var url = APP_STORE_URL;
     var qs = [];
-    if (_ttclid)       qs.push("ttclid="       + encodeURIComponent(_ttclid));
+    // Click-through
+    if (_ttclid)       qs.push("clickid="       + encodeURIComponent(_ttclid));
+    // View-through / VTA
+    if (_ttUserId)     qs.push("tt_user_id="    + encodeURIComponent(_ttUserId));
+    if (_anonymousId)  qs.push("anonymous_id="  + encodeURIComponent(_anonymousId));
     if (_impressionId) qs.push("impression_id=" + encodeURIComponent(_impressionId));
+    if (_ttpCookie)    qs.push("ttp="           + encodeURIComponent(_ttpCookie));
+    if (_ttBridgeId)   qs.push("tt_open_id="    + encodeURIComponent(_ttBridgeId));
+    // UTM passthrough
     if (_utmCampaign)  qs.push("utm_campaign="  + encodeURIComponent(_utmCampaign));
     if (_utmContent)   qs.push("utm_content="   + encodeURIComponent(_utmContent));
     if (qs.length) url += (url.indexOf("?") === -1 ? "?" : "&") + qs.join("&");
