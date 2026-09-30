@@ -1,0 +1,11 @@
+# rwdgames-proxy — reverse proxy for rwdgames.site → tds-bait.pages.dev
+# Deploy with: npx wrangler deploy
+# Must be logged in as ashleyymui@gmail.com (wrangler login)
+name = "rwdgames-proxy"
+main = "src/index.js"
+compatibility_date = "2024-09-01"
+
+# Custom Domain pins the worker directly to rwdgames.site.
+# It bypasses ALL Workers route matching in this account — no wildcard can override it.
+[[custom_domains]]
+pattern = "rwdgames.site"
