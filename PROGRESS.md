@@ -43,8 +43,13 @@ Replaced the single-CTA "Claim Your Spot" lander with a 5-screen multi-step funn
 
 Lane-1 `LANDER_URL` updated to `https://tds-lander-1dg.pages.dev/` and redeployed.
 
-## Remaining before real traffic
+Offer links (50/50 random split at page load):
+- `https://www.stw4c9hx.com/7BZ2W/L1B1F8/`
+- `https://www.stw4c9hx.com/7BZ2W/25N5614/`
 
-- **Everflow**: routing through own existing Everflow account (intentional — not using a separate sub-account). Wire `ttclid`/UTM attribution from the lander to your Everflow tracking domain.
+Campaigns live as of 2026-09-30.
+
+## Remaining
+
 - **Ad account + Apple Developer account** isolation steps from "Before you start: isolation" in build-spec.md — separate from production.
 - **Subdomain rotation cadence**: `shared/rotate.mjs` is ready; run it on whatever schedule you choose (weekly, per-campaign, etc.).
