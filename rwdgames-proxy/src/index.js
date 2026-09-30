@@ -11,16 +11,21 @@ export default {
       const ua = url.searchParams.get("ua") || "";
       const nowMs = Date.now();
 
-      const context = { ad: { callback: ttclid } };
-      if (ip) context.ip = ip;
-      if (ua) context.user_agent = ua;
+      const user = { ttclid };
+      if (ip) user.ip = ip;
+      if (ua) user.user_agent = ua;
 
       const body = {
-        pixel_code: "DAUDSBRC77U5PB60GGK0",
-        event: event,
-        timestamp: new Date(nowMs).toISOString(),
-        context,
-        properties: {},
+        event_source: "web",
+        event_source_id: "DAUDSBRC77U5PB60GGK0",
+        data: [
+          {
+            event,
+            event_time: Math.floor(nowMs / 1000),
+            user,
+            properties: {},
+          },
+        ],
       };
 
       const ttResp = await fetch(
