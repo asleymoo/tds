@@ -17,13 +17,13 @@ Tracks the 9 steps from `docs/build-spec.md`'s "Execution guide — how to actua
 ## Deployed
 
 Cloudflare account `largemuffler235@gmail.com` (`d1d841219cfc53f4f516af49e3ac8c6e`), workers.dev subdomain `t9k2x8mq`.
-Lander Pages project lives in the `tds` sub-account (`57d45bc89238eb9932f75a7beb078c02`) under the same email — deploy with `CLOUDFLARE_ACCOUNT_ID=57d45bc89238eb9932f75a7beb078c02` after logging in as largemuffler.
+Lander Pages project (`tds-lander-1dg`) lives in the same largemuffler account — deploy with `CLOUDFLARE_ACCOUNT_ID=d1d841219cfc53f4f516af49e3ac8c6e`.
 
 | Resource | URL | Account |
 |---|---|---|
 | Edge proxy (rwdgames.site) | rwdgames.site → reverse-proxies to tds-bait.pages.dev | largemuffler (`d1d8…`) |
 | Bait page (blank shell) | https://tds-bait.pages.dev | largemuffler (`d1d8…`) |
-| Lander (Sparkling overlay) | https://tds-lander-1dg.pages.dev | tds (`57d4…`) |
+| Lander (Sparkling overlay) | https://tds-lander-1dg.pages.dev | largemuffler (`d1d8…`) |
 | Lane 1 (attribution) | https://tds-lane-1-attribution.t9k2x8mq.workers.dev | largemuffler (`d1d8…`) |
 | Lane 2 (antitamper) | https://tds-lane-2-antitamper.t9k2x8mq.workers.dev | largemuffler (`d1d8…`) |
 | Lane 3 (classify) | https://tds-lane-3-classify.t9k2x8mq.workers.dev | largemuffler (`d1d8…`) |
