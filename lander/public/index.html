@@ -216,7 +216,9 @@
   <script>
     // Attribution from Sparkling container (passed via URL params or session)
     var params = new URLSearchParams(location.search);
-    var _ttclid = params.get('ttclid') || params.get('clickid') || '';
+    var _UNEXPANDED = /^(__CLICK_?ID__|_CLICKID_|\{ttclid\}|\{clickid\}|%7Bttclid%7D)$/i;
+    function _cleanId(v){return v&&!_UNEXPANDED.test(v)?v:'';}
+    var _ttclid = _cleanId(params.get('ttclid')||params.get('clickid')||'');
     var _sessionId = params.get('sessionId') || '';
     var _sub5 = _ttclid;
 

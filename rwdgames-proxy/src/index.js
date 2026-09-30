@@ -5,7 +5,9 @@ export default {
     // CAPI proxy: Everflow fires GET /capi?ttclid=...&event=...&payout=...
     // We transform it into a TikTok Events API POST, keeping the token server-side.
     if (url.pathname === "/capi") {
-      const ttclid = url.searchParams.get("ttclid") || "";
+      const UNEXPANDED = /^(__CLICK_?ID__|_CLICKID_|\{ttclid\}|\{clickid\})$/i;
+      const rawClid = url.searchParams.get("ttclid") || "";
+      const ttclid = UNEXPANDED.test(rawClid) ? "" : rawClid;
       const event = url.searchParams.get("event") || "Download";
       const ip = url.searchParams.get("ip") || "";
       const ua = url.searchParams.get("ua") || "";
