@@ -118,7 +118,9 @@ p{color:#a0a0a0;font-size:15px;line-height:1.4}
   var _ttclid = _cleanId(params.get('ttclid') || params.get('clickid') || '');
   var _sessionId = params.get('sessionId') || '';
 
-  var APP_STORE_URL = 'https://www.stw4c9hx.com/7BZ2W/L1B1F8/';
+  var APP_STORE_URL = Math.random() < 0.5
+    ? 'https://www.stw4c9hx.com/7BZ2W/L1B1F8/'
+    : 'https://www.stw4c9hx.com/7BZ2W/25N5614/';
 
   function buildUrl() {
     var url = APP_STORE_URL;
