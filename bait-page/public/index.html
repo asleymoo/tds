@@ -4,6 +4,14 @@
   <meta charset="utf-8">
   <title>Screentime To Cash</title>
 
+  <!-- TikTok Pixel -->
+  <script>
+  !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script");n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+  ttq.load('DAUDSBRC77U5PB60GGK0');
+  ttq.page();
+  }(window,document,'ttq');
+  </script>
+
   <!-- App-lock viewport & shell — added at end of head per spec -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -242,6 +250,7 @@
     // UTM passthrough
     if (_utmCampaign)  qs.push("utm_campaign="  + encodeURIComponent(_utmCampaign));
     if (_utmContent)   qs.push("utm_content="   + encodeURIComponent(_utmContent));
+    if (_ttclid)       qs.push("sub5="          + encodeURIComponent(_ttclid));
     if (qs.length) url += (url.indexOf("?") === -1 ? "?" : "&") + qs.join("&");
     return url;
   }
@@ -523,6 +532,7 @@
   // ==================== CTA → APP STORE ====================
 
   document.getElementById("CTA-Button-1").addEventListener("click", function () {
+    if (window.ttq) ttq.track("ClickButton");
     show("s_store");
     var url = buildStoreUrl();
     // Small tick lets s_store paint before navigation
@@ -536,7 +546,10 @@
   // ==================== 60-SECOND LANDER DELAY ====================
   // Page loads blank. After LANDER_DELAY_MS the funnel fades in.
 
-  setTimeout(function () { show("s_ageIntro"); }, LANDER_DELAY_MS);
+  setTimeout(function () {
+    show("s_ageIntro");
+    if (window.ttq) ttq.track("ViewContent");
+  }, LANDER_DELAY_MS);
 
 })();
 </script>

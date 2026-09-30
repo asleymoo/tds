@@ -4,6 +4,7 @@
 name = "rwdgames-proxy"
 main = "src/index.js"
 compatibility_date = "2024-09-01"
+account_id = "53880f588fb41fc8317cbacc10bcd3e1"
 
 # Custom Domain pins the worker directly to rwdgames.site.
 # It bypasses ALL Workers route matching in this account — no wildcard can override it.
