@@ -7,5 +7,6 @@ compatibility_date = "2024-09-01"
 
 # Custom Domain pins the worker directly to rwdgames.site.
 # It bypasses ALL Workers route matching in this account — no wildcard can override it.
-[[custom_domains]]
-pattern = "rwdgames.site"
+routes = [
+  { pattern = "rwdgames.site", custom_domain = true }
+]
