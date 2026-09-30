@@ -10,7 +10,7 @@
   "compatibility_date": "2024-09-01",
   "vars": {
     "ALLOWED_ORIGIN": "https://tds-bait.pages.dev",
-    "LANDER_URL": "https://tds-lander.pages.dev/"
+    "LANDER_URL": "https://tds-lander-1dg.pages.dev/"
   },
   "analytics_engine_datasets": [
     { "binding": "TDS_ANALYTICS", "dataset": "tds_analytics" }

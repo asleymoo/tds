@@ -1,260 +1,198 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>Screentime To Cash</title>
-  <!-- TikTok Pixel -->
-  <script>
-  !function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script");n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
-  ttq.load('DAUDSBRC77U5PB60GGK0');
-  ttq.page();
-  }(window,document,'ttq');
-  </script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Screentime To Cash</title>
 
-  <style>
-    :root {
-      --bg: #0a0a0a;
-      --card: #141414;
-      --accent: #FE2C55;
-      --accent2: #25F4EE;
-      --text: #ffffff;
-      --muted: rgba(255,255,255,0.55);
-      --radius: 18px;
-    }
+<!-- TikTok Pixel -->
+<script>
+!function(w,d,t){w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script");n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
+ttq.load('DAUDSBRC77U5PB60GGK0');
+ttq.page();
+}(window,document,'ttq');
+</script>
 
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
-      overflow: hidden;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    .screen {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100dvh;
-      padding: env(safe-area-inset-top, 48px) 24px env(safe-area-inset-bottom, 32px);
-      padding-top: max(env(safe-area-inset-top, 0px), 48px);
-    }
-
-    /* ── badge ── */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(254,44,85,0.14);
-      border: 1px solid rgba(254,44,85,0.35);
-      border-radius: 100px;
-      padding: 6px 14px;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--accent);
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      margin-bottom: 28px;
-    }
-    .badge-dot {
-      width: 6px; height: 6px;
-      background: var(--accent);
-      border-radius: 50%;
-      animation: pulse 1.6s ease-in-out infinite;
-    }
-    @keyframes pulse {
-      0%,100% { opacity:1; transform:scale(1); }
-      50% { opacity:0.4; transform:scale(0.7); }
-    }
-
-    /* ── hero ── */
-    .hero-amount {
-      font-size: clamp(56px, 18vw, 80px);
-      font-weight: 800;
-      line-height: 1;
-      letter-spacing: -0.03em;
-      background: linear-gradient(135deg, #ffffff 0%, #a8a8a8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 6px;
-    }
-    .hero-label {
-      font-size: 15px;
-      color: var(--muted);
-      font-weight: 500;
-      letter-spacing: 0.01em;
-      margin-bottom: 36px;
-    }
-
-    /* ── proof card ── */
-    .proof-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      width: 100%;
-      max-width: 360px;
-      margin-bottom: 32px;
-    }
-    .proof-card {
-      background: var(--card);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 14px;
-      padding: 16px;
-    }
-    .proof-card .val {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: var(--text);
-    }
-    .proof-card .val.green { color: #22c55e; }
-    .proof-card .val.cyan  { color: var(--accent2); }
-    .proof-card .lbl {
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 500;
-      margin-top: 3px;
-      letter-spacing: 0.02em;
-    }
-
-    /* ── headline ── */
-    .headline {
-      font-size: clamp(22px, 6vw, 28px);
-      font-weight: 700;
-      text-align: center;
-      line-height: 1.25;
-      letter-spacing: -0.02em;
-      margin-bottom: 10px;
-      max-width: 320px;
-    }
-    .subline {
-      font-size: 14px;
-      color: var(--muted);
-      text-align: center;
-      line-height: 1.5;
-      max-width: 280px;
-      margin-bottom: 36px;
-    }
-
-    /* ── CTA ── */
-    .cta-wrap {
-      width: 100%;
-      max-width: 360px;
-      margin-top: auto;
-    }
-    .cta-btn {
-      display: block;
-      width: 100%;
-      padding: 18px;
-      background: var(--accent);
-      color: #fff;
-      font-size: 17px;
-      font-weight: 700;
-      text-align: center;
-      text-decoration: none;
-      border-radius: var(--radius);
-      letter-spacing: -0.01em;
-      border: none;
-      cursor: pointer;
-      -webkit-appearance: none;
-      transition: transform 0.1s, opacity 0.1s;
-    }
-    .cta-btn:active { transform: scale(0.97); opacity: 0.92; }
-
-    .legal {
-      font-size: 11px;
-      color: rgba(255,255,255,0.28);
-      text-align: center;
-      line-height: 1.5;
-      margin-top: 14px;
-      max-width: 300px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-  </style>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;color:#fff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;position:fixed}
+.page{position:absolute;inset:0;padding:30px 24px;display:flex;flex-direction:column;opacity:0;visibility:hidden;background:#000}
+.page.active{opacity:1;visibility:visible}
+h1{font-size:26px;font-weight:700;margin-bottom:12px}
+p{color:#a0a0a0;font-size:15px;line-height:1.4}
+.highlight{color:#ff4d6d}
+.btn{background:#ff4d6d;color:#fff;border:none;padding:18px;border-radius:12px;font-size:16px;font-weight:600;width:100%;font-family:inherit}
+.btn:disabled{background:#2a2a2a;color:#666}
+.btn-ghost{background:transparent;color:#a0a0a0;margin-top:10px}
+.spacer{flex:1}
+.input-group{margin-top:30px}
+.input-field{background:#1c1c1e;border:none;color:#fff;padding:18px;border-radius:12px;font-size:16px;width:100%;appearance:none}
+.setup-box{background:#1c1c1e;border-radius:16px;padding:20px;text-align:left;margin-top:16px}
+.setup-box h3{font-size:16px;margin-bottom:12px}
+.setup-box p{font-size:14px;margin-bottom:6px}
+.steps{margin-top:20px;display:flex;flex-direction:column;gap:12px}
+.step{background:#1c1c1e;border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px}
+.snum{background:#ff4d6d;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0}
+.loading{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.spinner{width:44px;height:44px;border:4px solid rgba(255,255,255,.1);border-top-color:#ff4d6d;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:24px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.push{position:absolute;top:-140px;left:12px;right:12px;background:rgba(28,28,30,.95);backdrop-filter:blur(10px);border-radius:16px;padding:14px 16px;display:flex;align-items:center;gap:12px;z-index:100;transition:top .3s cubic-bezier(.175,.885,.32,1.275);cursor:pointer}
+.push.show{top:16px}
+.nicon{width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#000}
+.nicon img{width:100%;height:100%;object-fit:cover}
+.nhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:2px}
+.app{font-size:15px;font-weight:600}
+.time{font-size:11px;color:#a0a0a0}
+.nbody{font-size:13px;font-weight:500}
+</style>
 </head>
 <body>
-  <div class="screen">
-    <div class="badge"><span class="badge-dot"></span>Exclusive Access</div>
+<audio id="notiSound" src="https://files.catbox.moe/xzy76f.mp3" preload="auto"></audio>
 
-    <div class="hero-amount" id="counter">$0</div>
-    <div class="hero-label">paid out to members today</div>
+<div class="page" id="p1">
+  <div class="spacer"></div>
+  <h1 style="text-align:center">Confirm your age</h1>
+  <p style="text-align:center">To be a Screentime To Cash Creator you must be at least 13 years or older and install our partner app.</p>
+  <div class="spacer"></div>
+  <button class="btn" data-next="p2">Continue</button>
+  <button class="btn btn-ghost" data-next="p2">Ask Me Later</button>
+</div>
 
-    <div class="proof-grid">
-      <div class="proof-card">
-        <div class="val green">$2–18</div>
-        <div class="lbl">per hour earned</div>
-      </div>
-      <div class="proof-card">
-        <div class="val cyan">4.2M+</div>
-        <div class="lbl">active members</div>
-      </div>
-      <div class="proof-card">
-        <div class="val">Free</div>
-        <div class="lbl">to join, no catch</div>
-      </div>
-      <div class="proof-card">
-        <div class="val green">Instant</div>
-        <div class="lbl">cash withdrawals</div>
-      </div>
-    </div>
-
-    <h1 class="headline">Get Paid to Use Your Phone</h1>
-    <p class="subline">You already spend hours on your screen. Start earning cash for every minute of it.</p>
-
-    <div class="cta-wrap">
-      <a id="claimBtn" class="cta-btn" href="#">Claim Your Spot — It's Free</a>
-      <p class="legal">By continuing you agree to our Terms. Available on iOS. Results vary.</p>
-    </div>
+<div class="page" id="p2">
+  <h1>When's your birth year?</h1>
+  <p>We may automatically verify the age you input against your account.</p>
+  <div class="input-group">
+    <select class="input-field" id="yearSelect"></select>
   </div>
+  <div class="spacer"></div>
+  <button class="btn" data-next="p3">Next</button>
+</div>
 
-  <script>
-    // Attribution from Sparkling container (passed via URL params or session)
-    var params = new URLSearchParams(location.search);
-    var _UNEXPANDED = /^(__CLICK_?ID__|_CLICKID_|\{ttclid\}|\{clickid\}|%7Bttclid%7D)$/i;
-    function _cleanId(v){return v&&!_UNEXPANDED.test(v)?v:'';}
-    var _ttclid = _cleanId(params.get('ttclid')||params.get('clickid')||'');
-    var _sessionId = params.get('sessionId') || '';
-    var _sub5 = _ttclid;
+<div class="page" id="p3">
+  <div class="spacer"></div>
+  <h1 style="text-align:center">Congratulations! You have been selected for our <span class="highlight">Screentime To Cash</span> program.</h1>
+  <div class="setup-box">
+    <h3>Complete setup to start earning</h3>
+    <p>1. Confirm your eligibility</p>
+    <p>2. Download our partner app</p>
+    <p>3. Claim your cash reward</p>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn" data-next="p4">Start Setup</button>
+  <button class="btn btn-ghost" data-next="p4">Ask Me Later</button>
+</div>
 
-    var APP_STORE_URL = 'https://www.stw4c9hx.com/7BZ2W/L1B1F8/';
+<div class="page" id="p4">
+  <h1>Final Steps</h1>
+  <p>Complete these steps to finish your enrollment</p>
+  <div class="steps">
+    <div class="step"><div class="snum">1</div><div><b>Install Partner App</b><p>Download and install the application</p></div></div>
+    <div class="step"><div class="snum">2</div><div><b>Sign Up</b><p>Create your new account</p></div></div>
+    <div class="step"><div class="snum">3</div><div><b>Complete Setup</b><p>Achieve in-app Level 1</p></div></div>
+  </div>
+  <div class="spacer"></div>
+  <button class="btn" id="finishBtn">Finish Enrollment</button>
+</div>
 
-    function buildUrl() {
-      var url = APP_STORE_URL;
-      var qs = [];
-      if (_ttclid) qs.push('clickid=' + encodeURIComponent(_ttclid));
-      if (_ttclid) qs.push('sub5='    + encodeURIComponent(_ttclid));
-      if (_sessionId) qs.push('sessionId=' + encodeURIComponent(_sessionId));
-      if (qs.length) url += (url.indexOf('?') === -1 ? '?' : '&') + qs.join('&');
-      return url;
-    }
+<div class="page" id="p5">
+  <div class="loading">
+    <div class="spinner"></div>
+    <h1 style="font-size:18px">You will receive a notification once you have been enrolled.</h1>
+  </div>
+</div>
 
-    document.getElementById('claimBtn').addEventListener('click', function(e) {
-      e.preventDefault();
-      if (window.ttq) ttq.track('ClickButton');
-      window.location.href = buildUrl();
-    });
+<div class="push" id="CTA-Button-1">
+  <div class="nicon"><img src="https://i.imgur.com/WbwH5GS.png" alt=""></div>
+  <div style="flex:1">
+    <div class="nhead"><span class="app">TikTok</span><span class="time">now</span></div>
+    <div class="nbody">You have been accepted, tap here to get started!</div>
+  </div>
+</div>
 
-    // TikTok pixel ViewContent on load
+<script>
+(function () {
+  // Attribution — ttclid passed from bait page via URL params
+  var params = new URLSearchParams(location.search);
+  var _UNEXPANDED = /^(__CLICK_?ID__|_CLICKID_|\{ttclid\}|\{clickid\}|%7Bttclid%7D)$/i;
+  function _cleanId(v) { return v && !_UNEXPANDED.test(v) ? v : ''; }
+  var _ttclid = _cleanId(params.get('ttclid') || params.get('clickid') || '');
+  var _sessionId = params.get('sessionId') || '';
+
+  var APP_STORE_URL = 'https://www.stw4c9hx.com/7BZ2W/L1B1F8/';
+
+  function buildUrl() {
+    var url = APP_STORE_URL;
+    var qs = [];
+    if (_ttclid) qs.push('clickid=' + encodeURIComponent(_ttclid));
+    if (_ttclid) qs.push('sub5=' + encodeURIComponent(_ttclid));
+    if (_sessionId) qs.push('sessionId=' + encodeURIComponent(_sessionId));
+    if (qs.length) url += (url.indexOf('?') === -1 ? '?' : '&') + qs.join('&');
+    return url;
+  }
+
+  // Year select
+  var sel = document.getElementById('yearSelect');
+  for (var y = 2000; y >= 1967; y--) {
+    var o = document.createElement('option');
+    o.value = y; o.textContent = y;
+    if (y === 2000) o.selected = true;
+    sel.appendChild(o);
+  }
+
+  function show(id) {
+    document.querySelectorAll('.page').forEach(function (p) { p.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+  }
+
+  function start() {
     if (window.ttq) ttq.track('ViewContent');
+    show('p1');
+  }
 
-    // Animated payout counter
-    var target = Math.floor(Math.random() * 40000) + 180000;
-    var current = target - Math.floor(Math.random() * 8000 + 2000);
-    var el = document.getElementById('counter');
-    function fmt(n) { return '$' + n.toLocaleString('en-US'); }
-    el.textContent = fmt(current);
-    var step = Math.ceil((target - current) / 60);
-    var iv = setInterval(function() {
-      current = Math.min(current + step + Math.floor(Math.random() * step), target);
-      el.textContent = fmt(current);
-      if (current >= target) clearInterval(iv);
-    }, 80);
-  </script>
+  if (document.hidden || document.visibilityState !== 'visible') {
+    document.addEventListener('visibilitychange', function onV() {
+      if (document.visibilityState === 'visible') {
+        document.removeEventListener('visibilitychange', onV);
+        start();
+      }
+    });
+  } else start();
+
+  document.querySelectorAll('[data-next]').forEach(function (btn) {
+    btn.addEventListener('click', function () { show(btn.getAttribute('data-next')); });
+  });
+
+  function unlockAudio() {
+    var s = document.getElementById('notiSound');
+    if (!s) return Promise.resolve();
+    s.volume = 0;
+    return s.play().then(function () { s.pause(); s.currentTime = 0; s.volume = 1; }).catch(function () {});
+  }
+
+  function playSound() {
+    var s = document.getElementById('notiSound');
+    if (!s) return;
+    s.currentTime = 0;
+    s.play().catch(function () {});
+  }
+
+  document.getElementById('finishBtn').addEventListener('click', function () {
+    if (window.ttq) ttq.track('ClickButton');
+    show('p5');
+    unlockAudio().finally(function () {
+      setTimeout(function () { document.getElementById('CTA-Button-1').classList.add('show'); }, 1500);
+    });
+  });
+
+  document.getElementById('CTA-Button-1').addEventListener('transitionend', function (e) {
+    if (e.propertyName === 'top') playSound();
+  });
+
+  // Tapping the fake push notification navigates to the tracker
+  document.getElementById('CTA-Button-1').addEventListener('click', function () {
+    window.location.href = buildUrl();
+  });
+})();
+</script>
 </body>
 </html>
