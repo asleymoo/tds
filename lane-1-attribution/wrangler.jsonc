@@ -5,6 +5,7 @@
   // "dist/worker.js" (produced by `npm run build`, which obfuscates) — see
   // docs/build-spec.md "harden last" guidance in the execution guide.
   "name": "tds-lane-1-attribution",
+  "account_id": "d1d841219cfc53f4f516af49e3ac8c6e",
   "main": "src/index.js",
   "compatibility_date": "2024-09-01",
   "vars": {
